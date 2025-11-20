@@ -1,0 +1,16 @@
+# Configurazione per la build di un progetto Vite/React
+[build]
+  # Specifica il comando da eseguire per la build
+  command = "npm run build"
+  
+  # Specifica la cartella che Netlify deve pubblicare
+  publish = "dist"
+
+  # Imposta il percorso base su "/" per risolvere eventuali problemi di routing (anche se non strettamente necessario per Netlify)
+  base = "/"
+
+# Impostazioni per il reindirizzamento (utile per SPA come React)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
