@@ -165,72 +165,62 @@ const Navbar = () => {
 
 // Sezione Eroe (Hero)
 const Hero = () => {
+  // 1. Nuovo stato per la posizione di partenza X
+  const [startX, setStartX] = useState('50%'); 
+  // 2. Ref per l'elemento visivo dell'impianto (l'icona al centro)
+  const imageRef = useRef(null); 
+
+  // Calcola la posizione X dell'immagine quando il componente è montato o quando la finestra cambia dimensione
+  useEffect(() => {
+    const calculateStartX = () => {
+      if (imageRef.current) {
+        const rect = imageRef.current.getBoundingClientRect();
+        // Calcola il centro assoluto X dell'elemento visivo
+        const centerAbsoluteX = rect.left + rect.width / 2;
+        
+        // Calcola la X relativa al container principale (che è centrato con `container mx-auto`)
+        // Per semplicità, useremo la X relativa al centro della viewport
+        const viewportCenter = window.innerWidth / 2;
+        
+        // Calcola lo spostamento del centro dell'immagine dal centro del viewport
+        // Sposta il container della scia di conseguenza
+        const offsetFromCenter = centerAbsoluteX - viewportCenter;
+        
+        // L'elemento SVG della scia è centrato (`left-1/2 -translate-x-1/2`),
+        // quindi dobbiamo aggiungere l'offset a quel punto.
+        setStartX(`calc(50% + ${offsetFromCenter}px)`);
+      } else {
+        // Fallback per schermi piccoli (mobile) dove l'immagine è nascosta
+        setStartX('50%'); 
+      }
+    };
+
+    calculateStartX();
+    window.addEventListener('resize', calculateStartX);
+
+    return () => window.removeEventListener('resize', calculateStartX);
+  }, []);
+
   return (
     <section className="relative min-h-screen flex flex-col pt-20 overflow-hidden bg-slate-950 z-10">
-      <div className="absolute inset-0 z-0 overflow-hidden">
-        {/* Animazione di sfondo energetica */}
-        <div className="absolute top-[-20%] right-[-10%] w-[50vw] min-w-[300px] h-[50vw] min-h-[300px] bg-blue-600/10 rounded-full blur-[100px] animate-pulse" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[60vw] min-w-[300px] h-[60vw] min-h-[300px] bg-yellow-400/5 rounded-full blur-[80px] animate-none" />
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10" />
-      </div>
+      {/* ... (sfondo) */}
 
       {/* Contenuto Principale */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10 grid lg:grid-cols-12 gap-12 items-center flex-grow">
+        {/* ... (Contenuto Testuale) */}
         <motion.div 
-          className="lg:col-span-7 pt-12 lg:pt-0"
-          initial="hidden"
-          animate="visible"
-          variants={{
-            visible: { 
-              transition: { 
-                staggerChildren: 0.2, 
-                delayChildren: 0.3 
-              } 
-            }
-          }}
+          // ... (varianti)
         >
-          {/* Tagline di Servizio */}
-          <motion.div variants={textVariants} className="flex flex-wrap gap-3 mb-6">
-            <ServiceTag text="PRONTO INTERVENTO H24" icon={Clock} />
-            <ServiceTag text="CERTIFICAZIONE GARANTITA" icon={CheckCircle2} />
-          </motion.div>
-          
-          <motion.h1 
-            variants={textVariants}
-            className="text-5xl md:text-7xl lg:text-8xl font-black text-white leading-tight tracking-tight mb-6"
-          >
-            LA TUA ENERGIA
-<br />
-            <span
-className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400
-via-yellow-200 to-white">
-              A NORMA.
-            </span>
-          </motion.h1>
-          
-          <motion.p 
-            variants={textVariants}
-            className="text-lg md:text-xl text-slate-400 mb-10 max-w-xl leading-relaxed"
-          >
-            Specialisti in progettazione, installazione e manutenzione di impianti elettrici certificati, domotici e fotovoltaici.
-          </motion.p>
-          
-          <motion.div variants={textVariants} className="flex flex-wrap gap-4 items-center">
-            <ElectricButton text="Richiedi Sopralluogo" />
-            <a
-              href="#servizi" 
-              className="px-6 py-3 group flex items-center gap-2 font-semibold text-white border-2 border-transparent hover:border-yellow-400/50 rounded-lg transition-colors"
-            >
-              Scopri di più
-              <ChevronRight className="w-5 h-5 text-yellow-400 group-hover:text-white group-hover:translate-x-1 transition-transform" />
-            </a>
-          </motion.div>
+          {/* ... (testo e bottoni) */}
         </motion.div>
         
         {/* Icona 3D Impianto (Elemento visivo) */}
         <div
-className="lg:col-span-5 relative hidden lg:flex items-center justify-center h-full min-h-[400px]">
+          className="lg:col-span-5 relative hidden lg:flex items-center justify-center h-full min-h-[400px]"
+        >
+          {/* 3. Collega il ref all'elemento dell'immagine */}
           <motion.div 
+            ref={imageRef} 
             initial={{ opacity: 0, scale: 0.8, rotate: 10 }}
             animate={{ opacity: 1, scale: 1, rotate: 0 }}
             transition={{ duration: 1, delay: 0.5, type: "spring", stiffness: 50 }}
@@ -247,7 +237,11 @@ className="lg:col-span-5 relative hidden lg:flex items-center justify-center h-f
 
       {/* INTEGRAZIONE DEL NUOVO ELEMENTO DI SCROLL */}
       <div className="flex justify-center -mt-20 h-[50vh] relative">
-        <div className="w-[10px] h-full absolute left-1/2 -translate-x-1/2 top-0">
+        {/* 4. Applica lo stile dinamico calcolato */}
+        <div 
+          className="w-[10px] h-full absolute top-0"
+          style={{ left: startX }}
+        >
           <ScrollPathSVG />
         </div>
       </div>
@@ -255,7 +249,6 @@ className="lg:col-span-5 relative hidden lg:flex items-center justify-center h-f
     </section>
   );
 };
-
 // Componente per le Tagline di Servizio
 const ServiceTag = ({ text, icon: Icon }) => (
     <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/50 border border-yellow-500/30 text-slate-200 text-xs font-bold whitespace-nowrap uppercase tracking-wider`}>
