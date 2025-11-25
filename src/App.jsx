@@ -1,109 +1,26 @@
-import React, { useRef, useState, useLayoutEffect, useCallback } from 'react';
-import { motion } from 'framer-motion'; 
-// Rimosse le importazioni problematiche di GSAP. Si assume che 'gsap' e 'ScrollTrigger' siano disponibili globalmente (es. tramite CDN).
-// Se il codice non funziona, assicurati che i tag <script> di GSAP e ScrollTrigger siano caricati nell'HTML.
-import { Zap, Menu, X, BatteryCharging, Clock, CheckCircle2 } from 'lucide-react';
+import React, { useRef, useState, useEffect } from 'react';
+import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
+import { 
+  Zap, Home, Factory, ShieldCheck, Cpu, Phone, ArrowRight, 
+  BatteryCharging, Menu, X, Lightbulb, CheckCircle2, ChevronRight,
+  ClipboardCheck, HardHat, Clock, Layers, TrendingUp
+} from 'lucide-react';
 
-// Registra il plugin GSAP (assume che 'gsap' e 'ScrollTrigger' siano definiti a livello globale)
-// Nota: Aggiunto un controllo per prevenire ReferenceError se le librerie non sono caricate.
-if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
-    gsap.registerPlugin(ScrollTrigger);
-}
+// Stile personalizzato per l'animazione shimmer
+// Nota: questa animazione CSS deve essere definita globalmente,
+// ma per l'obiettivo di un singolo file, la manterremo implicita
+// assumendo l'uso di Tailwind CSS e un setup React moderno.
+// Per un funzionamento garantito nel browser, gli stili dovrebbero essere in un file CSS o in un blocco <style> in HTML.
 
-
-// --- PLACEHOLDER COMPONENTS (Definiti qui per compilazione a file singolo) ---
-// Questi componenti simulano il comportamento di ElectricBeam, ServicesScene e BenefitsScene,
-// in attesa che tu li implementi in dettaglio.
-
-const ElectricBeam = ({ beamPath, scrollDuration }) => {
-    // In un ambiente reale, questo componente gestisce il canvas Three.js.
-    // Qui è un placeholder visibile (ma pointer-events-none) per dimostrare l'interazione.
-    return (
-        <div className="fixed inset-0 z-0 pointer-events-none opacity-40 flex items-center justify-center">
-             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-yellow-500/30 text-xs font-mono">
-                CANVAS 3D: {beamPath.length} PUNTI MAPPATI
-            </div>
-        </div>
-    );
+// Varianti di animazione per il testo
+const textVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6 } },
 };
 
-// Hook per simulare la creazione e la restituzione dei riferimenti DOM necessari alla App principale
-const usePlaceholderRefs = (onReady, numCards = 3) => {
-    const startPointRef = useRef(null);
-    const endPointRef = useRef(null);
-    // Crea ref per un array di elementi (le card)
-    const cardRefs = useRef(Array(numCards).fill(null).map(() => React.createRef()));
+// --- COMPONENTI ---
 
-    useLayoutEffect(() => {
-        // Al completamento del rendering (dove i ref del DOM dovrebbero essere pronti)
-        // chiamiamo onReady per passare i riferimenti richiesti al componente App.
-        const mockRefs = {
-            startPoint: startPointRef.current,
-            endPoint: endPointRef.current,
-            // Passiamo i riferimenti DOM effettivi delle card (o null se non ancora montati)
-            cardRefs: cardRefs.current.map(r => r.current).filter(r => r !== null),
-        };
-
-        if (onReady) {
-            onReady(mockRefs);
-        }
-    }, [onReady]);
-
-    return { startPointRef, endPointRef, cardRefs };
-};
-
-const ServicesScene = ({ onReady }) => {
-    // 3 card per i servizi
-    const { startPointRef, cardRefs } = usePlaceholderRefs(onReady, 3);
-    
-    return (
-        <section id="servizi" className="py-20 bg-slate-900 relative">
-            {/* Punto di inizio del fascio elettrico (al centro della sezione) */}
-            <div ref={startPointRef} className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-yellow-400/20 border-2 border-yellow-400 pointer-events-none" />
-            
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                <h2 className="text-4xl font-bold text-center text-white mb-12">I Nostri Servizi</h2>
-                <div className="grid md:grid-cols-3 gap-8">
-                    {Array(3).fill(0).map((_, i) => (
-                        <div key={i} ref={cardRefs.current[i]} className="p-6 bg-slate-800/50 rounded-xl border border-yellow-400/20 shadow-2xl text-center backdrop-blur-sm transition-all hover:bg-slate-700/50 hover:shadow-yellow-400/10">
-                            <Zap className="w-10 h-10 text-yellow-400 mx-auto mb-4" />
-                            <h3 className="text-xl font-semibold text-white">Progettazione Impianti {i + 1}</h3>
-                            <p className="text-slate-400 mt-2">Soluzioni su misura per ogni esigenza, garantendo sicurezza e conformità normativa.</p>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </section>
-    );
-};
-
-const BenefitsScene = ({ onReady }) => {
-    // 3 card per i vantaggi
-    const { cardRefs, endPointRef } = usePlaceholderRefs(onReady, 3);
-    
-    return (
-        <section id="vantaggi" className="py-20 bg-slate-950 relative">
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                <h2 className="text-4xl font-bold text-center text-white mb-12">Perché Sceglierci</h2>
-                <div className="grid md:grid-cols-3 gap-8">
-                     {Array(3).fill(0).map((_, i) => (
-                        <div key={i} ref={cardRefs.current[i]} className="p-6 bg-slate-800/50 rounded-xl border border-yellow-400/20 shadow-2xl text-center backdrop-blur-sm transition-all hover:bg-slate-700/50 hover:shadow-yellow-400/10">
-                            <CheckCircle2 className="w-10 h-10 text-yellow-400 mx-auto mb-4" />
-                            <h3 className="text-xl font-semibold text-white">Qualità Garantita {i + 1}</h3>
-                            <p className="text-slate-400 mt-2">Usiamo solo materiali certificati per assicurare la massima durata e affidabilità.</p>
-                        </div>
-                    ))}
-                </div>
-            </div>
-            {/* Punto di fine del fascio elettrico (verso il basso della sezione) */}
-             <div ref={endPointRef} className="absolute bottom-1/4 left-1/2 -translate-x-1/2 translate-y-1/2 w-10 h-10 rounded-full bg-yellow-400/20 border-2 border-yellow-400 pointer-events-none" />
-        </section>
-    );
-};
-
-// --- COMPONENTI UI GENERALI ---
-
-// Componente Logo
+// Logo del brand
 const Logo = () => (
   <a href="#" className="flex items-center gap-2 group cursor-pointer select-none z-50 relative">
     <div className="relative w-10 h-10 flex items-center justify-center bg-yellow-500/10 rounded-lg border border-yellow-500/20 group-hover:border-yellow-400/50 transition-colors">
@@ -116,138 +33,327 @@ const Logo = () => (
   </a>
 );
 
-// Componente Bottone con effetto Elettrico
-const ElectricButton = ({ text, className = "" }) => (
+// Bottone Elettrico (CTA principale)
+const ElectricButton = ({ text, onClick }) => {
+  return (
     <motion.button
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.98 }}
-        className={`relative group px-8 py-3 bg-yellow-400 text-slate-900 font-bold overflow-hidden rounded-lg shadow-xl shadow-yellow-400/30 transition-all ${className}`}
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={onClick}
+      className="relative group px-8 py-3 bg-yellow-400 text-slate-900 font-bold overflow-hidden rounded-lg shadow-xl shadow-yellow-400/30 transition-all"
     >
-        <span className="relative z-10 flex items-center gap-2 uppercase tracking-wider text-sm">
-            {text}
-            <Zap className="w-4 h-4 text-slate-900" />
-        </span>
+      {/* Effetto Shimmer/Zap su Hover - richiede una definizione keyframe CSS esterna */}
+      <div className="absolute top-0 left-[-100%] w-1/2 h-full bg-gradient-to-r from-transparent via-white/70 to-transparent skew-x-12 group-hover:animate-shimmer opacity-0 group-hover:opacity-100" />
+
+      <span className="relative z-10 flex items-center gap-2 uppercase tracking-wider text-sm">
+        {text}
+        <Zap className="w-4 h-4 text-slate-900" />
+      </span>
     </motion.button>
+  );
+};
+
+// Barra di Navigazione Fissa e Responsiva
+const Navbar = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    // Gestione dello scrolling
+    const handleScroll = () => setIsScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const navLinks = [
+    { name: 'Servizi', href: '#servizi' },
+    { name: 'Vantaggi', href: '#vantaggi' },
+    { name: 'Contatti', href: '#contatti' },
+  ];
+
+  return (
+    <nav className={`fixed w-full z-50 transition-all duration-500 ${isScrolled ? 'py-3 bg-slate-950/95 backdrop-blur-lg border-b border-white/5 shadow-2xl' : 'py-6 bg-transparent'}`}>
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+        <Logo />
+        
+        {/* Navigazione Desktop */}
+        <div className="hidden md:flex items-center gap-8">
+          {navLinks.map((link) => (
+            <a key={link.name} href={link.href} className="text-sm font-medium text-slate-300 hover:text-yellow-400 transition-colors relative group">
+              {link.name}
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-yellow-400 transition-all duration-300 group-hover:w-full" />
+            </a>
+          ))}
+          <ElectricButton text="Preventivo Gratuito" />
+        </div>
+
+        {/* Toggle Mobile */}
+        <button className="md:hidden text-white p-2 focus:outline-none" onClick={() => setIsOpen(!isOpen)} aria-label="Toggle Menu">
+          {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
+      </div>
+
+      {/* Menu Mobile */}
+      <motion.div 
+        initial={{ opacity: 0, height: 0 }}
+        animate={isOpen ? { opacity: 1, height: "auto" } : { opacity: 0, height: 0 }}
+        transition={{ duration: 0.3 }}
+        className="md:hidden absolute top-full left-0 w-full bg-slate-900 border-b border-white/10 shadow-lg overflow-hidden"
+      >
+        <div className="flex flex-col p-4 gap-4">
+          {navLinks.map((link) => (
+            <a key={link.name} href={link.href} className="text-lg font-medium text-white hover:text-yellow-400 border-b border-slate-800/50 pb-2" onClick={() => setIsOpen(false)}>
+              {link.name}
+            </a>
+          ))}
+          <ElectricButton text="Preventivo Gratuito" onClick={() => setIsOpen(false)} />
+        </div>
+      </motion.div>
+    </nav>
+  );
+};
+
+// Sezione Eroe (Hero)
+const Hero = () => {
+  return (
+    <section className="relative min-h-screen flex items-center pt-20 overflow-hidden bg-slate-950 z-10">
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        {/* Animazione di sfondo energetica */}
+        <div className="absolute top-[-20%] right-[-10%] w-[50vw] min-w-[300px] h-[50vw] min-h-[300px] bg-blue-600/10 rounded-full blur-[100px] animate-pulse" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[60vw] min-w-[300px] h-[60vw] min-h-[300px] bg-yellow-400/5 rounded-full blur-[80px] animate-none" />
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10" />
+      </div>
+
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10 grid lg:grid-cols-12 gap-12 items-center pb-20">
+        <motion.div 
+          className="lg:col-span-7 pt-12 lg:pt-0"
+          initial="hidden"
+          animate="visible"
+          variants={{
+            visible: { 
+              transition: { 
+                staggerChildren: 0.2, 
+                delayChildren: 0.3 
+              } 
+            }
+          }}
+        >
+          {/* Tagline di Servizio */}
+          <motion.div variants={textVariants} className="flex flex-wrap gap-3 mb-6">
+            <ServiceTag text="PRONTO INTERVENTO H24" icon={Clock} />
+            <ServiceTag text="CERTIFICAZIONE GARANTITA" icon={CheckCircle2} />
+          </motion.div>
+          
+          <motion.h1 
+            variants={textVariants}
+            className="text-5xl md:text-7xl lg:text-8xl font-black text-white leading-tight tracking-tight mb-6"
+          >
+            LA TUA ENERGIA <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-yellow-200 to-white">
+              A NORMA.
+            </span>
+          </motion.h1>
+          
+          <motion.p 
+            variants={textVariants}
+            className="text-lg md:text-xl text-slate-400 mb-10 max-w-xl leading-relaxed"
+          >
+            Specialisti in progettazione, installazione e manutenzione di impianti elettrici certificati, domotici e fotovoltaici.
+          </motion.p>
+          
+          <motion.div variants={textVariants} className="flex flex-wrap gap-4 items-center">
+            <ElectricButton text="Richiedi Sopralluogo" />
+            <a href="#servizi" className="px-6 py-3 group flex items-center gap-2 font-semibold text-white border-2 border-transparent hover:border-yellow-400/50 rounded-lg transition-colors">
+                Scopri di più
+                <ChevronRight className="w-5 h-5 text-yellow-400 group-hover:text-white group-hover:translate-x-1 transition-transform" />
+            </a>
+          </motion.div>
+        </motion.div>
+        
+        {/* Icona 3D Impianto (Elemento visivo) */}
+        <div className="lg:col-span-5 relative hidden lg:block h-full min-h-[400px]">
+           <div className="absolute inset-0 flex items-center justify-center">
+             <motion.div 
+                 initial={{ opacity: 0, scale: 0.8, rotate: 10 }}
+                 animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                 transition={{ duration: 1, delay: 0.5, type: "spring", stiffness: 50 }}
+                 className="relative w-80 h-80 flex items-center justify-center bg-slate-900 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.5)] border border-white/10"
+             >
+               <BatteryCharging className="w-40 h-40 text-yellow-400 opacity-20 relative z-10" />
+               <Zap className="w-20 h-20 text-yellow-400 absolute drop-shadow-[0_0_20px_rgba(250,204,21,0.8)] z-20" />
+               {/* Dettagli in background */}
+               <div className="absolute -top-4 -right-4 w-12 h-12 bg-blue-600/30 rounded-full blur-xl" />
+               <div className="absolute bottom-4 left-4 w-10 h-10 bg-yellow-400/30 rounded-full blur-xl" />
+             </motion.div>
+           </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+// Componente per le Tagline di Servizio
+const ServiceTag = ({ text, icon: Icon }) => (
+    <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/50 border border-yellow-500/30 text-slate-200 text-xs font-bold whitespace-nowrap uppercase tracking-wider`}>
+        <Icon className="w-3 h-3 text-yellow-400" />
+        {text}
+    </div>
 );
 
+// Componente Card del Servizio
+const ServiceCard = ({ icon: Icon, title, desc, delay }) => (
+    <motion.div
+      initial={{ opacity: 0, y: 50 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.4 }}
+      transition={{ duration: 0.6, delay: delay }}
+      className="bg-slate-900 border border-slate-800 rounded-xl p-8 shadow-xl hover:border-yellow-400/50 transition-all duration-300 transform hover:-translate-y-1"
+    >
+      <div className="p-4 inline-flex rounded-full bg-yellow-400/10 text-yellow-400 mb-6">
+        <Icon className="w-8 h-8" />
+      </div>
+      <h3 className="text-2xl font-bold text-white mb-3">{title}</h3>
+      <p className="text-slate-400">{desc}</p>
+      <a href="#contatti" className="mt-4 inline-flex items-center text-yellow-400 font-semibold hover:text-white transition-colors">
+        Scopri &nbsp;<ChevronRight className="w-4 h-4" />
+      </a>
+    </motion.div>
+);
 
-// Componente Navbar (Corretto per includere ElectricButton)
-const Navbar = () => {
-    const [isOpen, setIsOpen] = useState(false);
-    const [isScrolled, setIsScrolled] = useState(false);
-
-    React.useEffect(() => {
-        const handleScroll = () => setIsScrolled(window.scrollY > 20);
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
-
-    const navLinks = [
-        { name: 'Servizi', href: '#servizi' },
-        { name: 'Vantaggi', href: '#vantaggi' },
-        { name: 'Contatti', href: '#contatti' },
+// Sezione Servizi (Grid Layout)
+const ServicesGrid = () => {
+    const services = [
+      { icon: Home, title: "Impianti Residenziali", desc: "Sistemi domotici intelligenti, gestione carichi e quadri elettrici a norma per la massima sicurezza e comfort in casa." },
+      { icon: Factory, title: "Settore Industriale", desc: "Cabine di trasformazione, power center, automazione industriale e manutenzione predittiva per la continuità operativa." },
+      { icon: ShieldCheck, title: "Sicurezza & TVCC", desc: "Sistemi antintrusione connessi, videosorveglianza IP ad alta risoluzione e controlli accessi perimetrali." },
+      { icon: BatteryCharging, title: "Fotovoltaico & Storage", desc: "Progettazione e installazione di impianti fotovoltaici con accumulatori per l'indipendenza energetica totale." },
+      { icon: Lightbulb, title: "Illuminazione LED", desc: "Soluzioni di illuminazione ad alta efficienza e design, incluse l'illuminazione pubblica e industriale." },
+      { icon: Cpu, title: "Automazione Domotica", desc: "Integrazione completa di riscaldamento, clima, sicurezza e multimedia in un unico sistema gestibile da remoto." },
     ];
 
     return (
-        <nav className={`fixed w-full z-50 transition-all duration-500 ${isScrolled ? 'py-3 bg-slate-950/95 backdrop-blur-lg border-b border-white/5 shadow-2xl' : 'py-6 bg-transparent'}`}>
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-            <Logo />
-            
-            {/* Navigazione Desktop */}
-            <div className="hidden md:flex items-center gap-8">
-            {navLinks.map((link) => (
-                <a
-                key={link.name} 
-                href={link.href} 
-                className="text-sm font-medium text-slate-300 hover:text-yellow-400 transition-colors relative group"
-                >
-                {link.name}
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-yellow-400 transition-all duration-300 group-hover:w-full" />
-                </a>
-            ))}
-            {/* INSERIMENTO: Bottone per desktop */}
-            <ElectricButton text="Preventivo Gratuito" />
-            </div>
+        <section id="servizi" className="py-24 bg-slate-950">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+                {/* Titolo Sezione */}
+                <div className="text-center max-w-4xl mx-auto mb-16">
+                    <p className="text-yellow-400 uppercase font-bold text-sm mb-2">I Nostri Servizi Core</p>
+                    <h2 className="text-4xl md:text-5xl font-bold text-white">Tecnologia, Sicurezza, Efficienza.</h2>
+                </div>
 
-            {/* Toggle Mobile */}
-            <button
-            className="md:hidden text-white p-2 focus:outline-none" 
-            onClick={() => setIsOpen(!isOpen)} 
-            aria-label="Toggle Menu"
-            >
-            {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
-        </div>
-
-        {/* Menu Mobile */}
-        <motion.div 
-            initial={{ opacity: 0, height: 0 }}
-            animate={isOpen ? { opacity: 1, height: "auto" } : { opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-            className="md:hidden absolute top-full left-0 w-full bg-slate-900 border-b border-white/10 shadow-lg overflow-hidden"
-        >
-            <div className="flex flex-col p-4 gap-4">
-            {navLinks.map((link) => (
-                <a
-                key={link.name} 
-                href={link.href} 
-                className="text-lg font-medium text-white hover:text-yellow-400 border-b border-slate-800/50 pb-2" 
-                onClick={() => setIsOpen(false)}
-                >
-                {link.name}
-                </a>
-            ))}
-            <div className="pt-2">
-                 {/* INSERIMENTO: Bottone per mobile */}
-                 <ElectricButton text="Preventivo Gratuito" className="w-full justify-center"/>
+                {/* Griglia di Card */}
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {services.map((service, index) => (
+                        <ServiceCard key={index} {...service} delay={index * 0.15} />
+                    ))}
+                </div>
             </div>
-            </div>
-        </motion.div>
-        </nav>
+        </section>
     );
 };
 
-
-const Hero = () => (
-    <section className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden bg-slate-950 z-10">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-            <h1 className="text-6xl md:text-8xl font-black text-white leading-tight tracking-tight mb-6">
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-yellow-200 to-white">
-                    FLASH
-                </span> Energia
-            </h1>
-            <p className="text-xl md:text-2xl text-slate-400 max-w-2xl mx-auto mb-10">
-                L'impiantistica che si illumina con lo scroll. Scorri per accendere la linea elettrica!
-            </p>
-            <div className="inline-flex items-center gap-3">
-                <div className="p-2 inline-flex rounded-full bg-yellow-400/10 text-yellow-400">
-                    <BatteryCharging className="w-6 h-6" />
-                </div>
-                <div className="p-2 inline-flex rounded-full bg-yellow-400/10 text-yellow-400">
-                    <Zap className="w-6 h-6" />
-                </div>
-            </div>
-        </div>
-        <div className="absolute inset-0 z-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10" />
-    </section>
+// Componente Vantaggio con animazione
+const BenefitItem = ({ icon: Icon, title, desc, delay }) => (
+  <motion.div
+    initial={{ opacity: 0, x: -50 }}
+    whileInView={{ opacity: 1, x: 0 }}
+    viewport={{ once: true, amount: 0.5 }}
+    transition={{ duration: 0.7, delay: delay }}
+    className="flex items-start p-6 bg-slate-900 rounded-xl border border-slate-800 shadow-lg"
+  >
+    <div className="p-3 mr-4 rounded-full bg-yellow-400/10 text-yellow-400 flex-shrink-0">
+      <Icon className="w-6 h-6" />
+    </div>
+    <div>
+      <h3 className="text-xl font-bold text-white mb-2">{title}</h3>
+      <p className="text-slate-400">{desc}</p>
+    </div>
+  </motion.div>
 );
 
-// Componente Contatti (Corretto per includere ElectricButton)
-const Contact = () => (
+// Sezione Vantaggi (Perché Sceglierci)
+const Benefits = () => {
+  const benefits = [
+    { icon: ClipboardCheck, title: "Certificazione Garantita", desc: "Tutti i nostri impianti sono rilasciati con dichiarazione di conformità (DiCo) secondo le normative CEI in vigore." },
+    { icon: TrendingUp, title: "Efficienza Massima", desc: "Utilizziamo solo componenti ad alta efficienza per minimizzare i consumi e massimizzare il risparmio energetico." },
+    { icon: Layers, title: "Soluzioni Chiavi in Mano", desc: "Dalla progettazione alla messa in opera, gestiamo ogni fase del tuo progetto senza stress per te." },
+    { icon: HardHat, title: "Team Qualificato", desc: "I nostri tecnici sono costantemente aggiornati sulle ultime tecnologie e protocolli di sicurezza." },
+  ];
+
+  return (
+    <section id="vantaggi" className="py-24 bg-slate-900">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          
+          {/* Contenuto Testuale */}
+          <div className="lg:pr-10">
+            <p className="text-yellow-400 uppercase font-bold text-sm mb-2">Il Nostro Valore Aggiunto</p>
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Scegliere Flash Impianti è Scegliere la Qualità.</h2>
+            <p className="text-slate-300 text-lg mb-8">
+              Non siamo solo installatori, siamo consulenti energetici. Ti aiutiamo a fare scelte informate che impattano positivamente sull'ambiente e sul tuo bilancio.
+            </p>
+            <ElectricButton text="Inizia la tua Trasformazione" />
+          </div>
+
+          {/* Lista dei Vantaggi */}
+          <div className="space-y-6">
+            {benefits.map((benefit, index) => (
+              <BenefitItem key={index} {...benefit} delay={index * 0.1} />
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+
+// Sezione Contatti con Form
+const Contact = () => {
+  // Funzione fittizia per la sottomissione
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    // In un ambiente reale, qui ci sarebbe la logica per inviare i dati.
+    console.log("Dati inviati per il preventivo.");
+    // Sostituisco alert con una simulazione di messaggio
+    document.getElementById('contact-message').textContent = "Richiesta inviata! Sarai ricontattato a breve.";
+    document.getElementById('contact-message').classList.remove('hidden');
+    setTimeout(() => {
+        document.getElementById('contact-message').classList.add('hidden');
+    }, 4000);
+  };
+
+  return (
     <section id="contatti" className="py-24 bg-slate-950 relative overflow-hidden">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Contattaci: Il Fascio Si Ferma Qui.</h2>
-            <p className="text-slate-400 text-lg max-w-xl mx-auto">
-                La tua richiesta è il prossimo passo.
-            </p>
-             <div className="mt-8">
-                <ElectricButton text="Richiedi Preventivo" />
-            </div>
-        </div>
+       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="max-w-4xl mx-auto text-center mb-12">
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Accendiamo il tuo Progetto?</h2>
+            <p className="text-slate-400 text-lg">Inviaci i dettagli per un preventivo gratuito e non vincolante.</p>
+          </div>
+          
+          <motion.form 
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.7 }}
+            className="max-w-lg mx-auto p-8 bg-slate-900 rounded-xl border border-slate-800 shadow-2xl space-y-5" 
+            onSubmit={handleSubmit}
+          >
+             <div id="contact-message" className="hidden p-3 bg-yellow-400 text-slate-950 font-semibold rounded-lg text-center mb-4 transition-all"></div>
+            <input type="text" placeholder="Nome Completo" required className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 focus:outline-none transition-colors" />
+            <input type="tel" placeholder="Numero di Telefono" required className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 focus:outline-none transition-colors" />
+            <input type="email" placeholder="Email (obbligatoria per DiCo)" required className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 focus:outline-none transition-colors" />
+            <textarea rows="4" placeholder="Descrivi la tua esigenza (tipo di impianto, ubicazione, urgenza...)" required className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 focus:outline-none transition-colors resize-none"></textarea>
+            
+            <button type="submit" className="w-full py-3 bg-yellow-400 text-slate-900 font-bold rounded-lg hover:bg-yellow-300 transition-all uppercase text-lg shadow-xl shadow-yellow-400/30">
+              Invia la Mia Richiesta
+            </button>
+          </motion.form>
+       </div>
     </section>
-);
+  );
+};
 
-// Componente Footer (Corretto)
+// Footer (Piè di Pagina)
 const Footer = () => (
   <footer className="bg-slate-950 text-slate-500 py-10 border-t border-white/10">
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
@@ -264,134 +370,35 @@ const Footer = () => (
   </footer>
 );
 
-
-// --- COMPONENTE PRINCIPALE (ORCHESTRATORE) ---
+// Componente Principale App
 export default function App() {
-    // Stato per i dati del percorso 3D (punti X, Y, Z e durata scroll)
-    const [pathData, setPathData] = useState({ beamPath: [], scrollDuration: 0 });
-    // Ref per memorizzare i riferimenti DOM dai componenti ServicesScene e BenefitsScene
-    const servicesDataRef = useRef({});
-    const benefitsDataRef = useRef({});
-    
-    // Callback per raccogliere i dati dai componenti figlio (Servizi)
-    const handleServicesReady = useCallback((data) => {
-        servicesDataRef.current = data;
-        // Se i dati di Benefits sono già pronti, calcola il percorso
-        if (benefitsDataRef.current.endPoint) {
-            calculateBeamPath();
-        }
-    }, []);
+  // Aggiungiamo uno stile per l'animazione shimmer, anche se non è il metodo ideale in React,
+  // aiuta a simulare l'effetto richiesto nel pulsante ElectricButton.
+  // In un progetto reale, lo aggiungeresti al CSS globale.
+  const shimmerStyle = `
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(300%); }
+    }
+    .group:hover .group-hover\\:animate-shimmer {
+      animation: shimmer 1.5s infinite;
+    }
+  `;
 
-    // Callback per raccogliere i dati dai componenti figlio (Vantaggi)
-    const handleBenefitsReady = useCallback((data) => {
-        benefitsDataRef.current = data;
-        // Se i dati di Services sono già pronti, calcola il percorso
-        if (servicesDataRef.current.startPoint) {
-            calculateBeamPath();
-        }
-    }, []);
+  return (
+    <div className="bg-slate-950 min-h-screen font-sans text-slate-200 selection:bg-yellow-400 selection:text-black overflow-x-hidden">
+      {/* Stile CSS inline per l'animazione (metodo non convenzionale ma funzionale) */}
+      <style>{shimmerStyle}</style>
 
-
-    // Funzione principale per calcolare il percorso 3D
-    const calculateBeamPath = () => {
-        // Aggiungiamo un piccolo ritardo per assicurarci che tutti i riferimenti DOM siano pronti
-        setTimeout(() => {
-            const { startPoint, cardRefs: serviceCardRefs } = servicesDataRef.current;
-            const { cardRefs: benefitCardRefs, endPoint } = benefitsDataRef.current;
-            
-            if (!startPoint || !serviceCardRefs || !endPoint) return;
-
-            // --- 1. Mappatura dei Punti in Coordinate Schermo/Three.js ---
-            const viewportHeight = window.innerHeight;
-            // Ordine dei riferimenti: Inizio Servizi -> Card Servizi -> Card Vantaggi -> Fine Vantaggi
-            const targetRefs = [
-                startPoint, 
-                ...serviceCardRefs, 
-                ...benefitCardRefs, 
-                endPoint
-            ];
-
-            let pathPoints = [];
-            let minScrollY = window.scrollY; // Punto di scroll dove inizia il tracciamento
-            let maxScrollY = 0;
-
-            targetRefs.forEach((ref, index) => {
-                if (ref && ref.getBoundingClientRect) {
-                    const rect = ref.getBoundingClientRect();
-                    
-                    // Centro dell'elemento nel viewport
-                    const centerX = rect.left + rect.width / 2;
-                    const centerY = rect.top + rect.height / 2;
-                    
-                    // Coordinate per Three.js (Normalizzate per frustum [-2, 2])
-                    const threeX = (centerX / window.innerWidth) * 4 - 2; 
-                    // Y invertita per Three.js
-                    const threeY = -((centerY / viewportHeight) * 4 - 2); 
-                    
-                    pathPoints.push({ x: threeX, y: threeY, z: 0 });
-
-                    // Calcolo della distanza totale di scroll (dal centro del primo elemento)
-                    const absoluteY = rect.top + window.scrollY;
-                    if (index === 0) {
-                        minScrollY = absoluteY - viewportHeight / 2; 
-                    }
-                    if (index === targetRefs.length - 1) {
-                        maxScrollY = absoluteY - viewportHeight / 2; 
-                    }
-                }
-            });
-            
-            // --- 2. Aggiornamento dello Stato ---
-            const totalDuration = maxScrollY - minScrollY;
-
-            if (totalDuration > 0 && pathPoints.length > 1) {
-                 setPathData({ 
-                    beamPath: pathPoints, 
-                    scrollDuration: totalDuration 
-                });
-            }
-            
-            // Rinfresca GSAP dopo il calcolo - aggiunto controllo di esistenza
-            if (typeof ScrollTrigger !== 'undefined') {
-                ScrollTrigger.refresh();
-            }
-
-        }, 100); 
-    };
-
-    // Ricalcola al resize e avvia la logica (dopo il mount)
-    useLayoutEffect(() => {
-        // Avvia il calcolo (importante che i dati siano stati ricevuti dai figli)
-        calculateBeamPath(); 
-
-        window.addEventListener('resize', calculateBeamPath);
-        return () => window.removeEventListener('resize', calculateBeamPath);
-    }, []);
-
-
-    return (
-        <div className="bg-slate-950 min-h-screen font-sans text-slate-200 selection:bg-yellow-400 selection:text-black overflow-x-hidden">
-            
-            {/* Il canvas Three.js (ElectricBeam) viene reso solo se il percorso è stato calcolato */}
-            {pathData.beamPath.length > 1 && (
-                <ElectricBeam 
-                    beamPath={pathData.beamPath} 
-                    scrollDuration={pathData.scrollDuration} 
-                />
-            )}
-            
-            <Navbar />
-            <main>
-                <Hero />
-                {/* La ServicesScene passa i riferimenti dei punti iniziali al componente App */}
-                <ServicesScene onReady={handleServicesReady} />
-                <div style={{ height: '5vh' }} className="bg-slate-900" /> 
-                {/* La BenefitsScene passa i riferimenti dei punti intermedi e finali al componente App */}
-                <BenefitsScene onReady={handleBenefitsReady} />
-                <div style={{ height: '5vh' }} className="bg-slate-950" />
-                <Contact />
-            </main>
-            <Footer />
-        </div>
-    );
+      <Navbar />
+      <main>
+        <Hero />
+        <ServicesGrid />
+        <Benefits />
+        <Contact />
+      </main>
+      <Footer />
+    </div>
+  );
 }
+
