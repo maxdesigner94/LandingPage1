@@ -1,12 +1,24 @@
 /** @type {import('tailwindcss').Config} */
-module.exports = {
-  // Configurazione dei percorsi per lo scanning dei file (purge/content)
+export default {
   content: [
     "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}", // Cerca in tutti i file React dentro la cartella src
+    "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      animation: {
+        // Aggiunge l'animazione shimmer da usare nel CSS
+        shimmer: 'shimmer 1.5s infinite',
+      },
+      keyframes: {
+        shimmer: {
+          // La definizione del keyframe 'shimmer' è stata spostata in index.css
+          // ma spesso può essere definita anche qui per completezza:
+          // '0%': { transform: 'translateX(-100%)' },
+          // '100%': { transform: 'translateX(300%)' },
+        }
+      }
+    },
   },
   plugins: [],
 }
