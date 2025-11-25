@@ -206,6 +206,7 @@ const Hero = ({ servicesRef }) => {
       }
       
       // CRITICAL: Ricalcola tutti i trigger dopo aver aggiornato le altezze del DOM
+      // Questo è cruciale per compensare i ritardi nel rendering dei contenuti (font/immagini)
       ScrollTrigger.refresh(); 
     };
     
@@ -222,7 +223,7 @@ const Hero = ({ servicesRef }) => {
     const timeout = setTimeout(refreshAndRecalc, 300); 
 
     // --- LOGICA GSAP SCROLLTRIGGER ---
-    if (pathRef.current && imageRef.current && servicesRef.current) {
+    if (pathRef.current && imageRef.current && servicesRef.current && startX !== null) {
       const pathElement = pathRef.current;
       const pathLength = pathElement.getTotalLength();
 
@@ -232,6 +233,14 @@ const Hero = ({ servicesRef }) => {
         strokeDashoffset: pathLength,
       });
 
+      // Calcola la posizione di scroll assoluta in pixel dove l'animazione DEVE terminare
+      // Posizione di scroll = (Top Servizi + Metà Altezza Servizi) - Metà Altezza Viewport
+      const servicesRect = servicesRef.current.getBoundingClientRect();
+      const viewportCenterY = window.innerHeight / 2;
+      const servicesTopAbsolute = servicesRect.top + window.scrollY;
+      const servicesCenterScrollPosition = (servicesTopAbsolute + servicesRect.height / 2) - viewportCenterY;
+
+
       // Crea l'animazione GSAP
       animation = gsap.to(pathElement, {
         strokeDashoffset: 0,
@@ -239,17 +248,15 @@ const Hero = ({ servicesRef }) => {
         scrollTrigger: {
           // TRIGGER PRIMARIO: L'icona è il punto di partenza
           trigger: imageRef.current, 
-          // END TRIGGER: La sezione servizi è il punto di arrivo
-          endTrigger: servicesRef.current, 
-
-          // START: Quando il *fondo* del trigger (icona) incontra il *top* del viewport
+          
+          // START: Quando il *fondo* dell'icona (trigger) colpisce il *top* del viewport
           start: "bottom top", 
           
-          // END: Quando il *centro* del servicesRef incontra il *centro* del viewport
-          end: "center center", 
+          // END: Posizione di scroll assoluta calcolata per la massima precisione
+          end: servicesCenterScrollPosition, 
           
           scrub: true,
-          // marker: true, // DECOMMENTA PER DEBUG
+          // markers: true, // DECOMMENTA PER DEBUG
         },
       });
     }
@@ -259,7 +266,7 @@ const Hero = ({ servicesRef }) => {
       clearTimeout(timeout);
       if (animation) animation.kill(); 
     };
-    // La dipendenza sui ref assicura che il setup GSAP sia ricreato quando i ref sono disponibili
+    
   }, [servicesRef.current, imageRef.current]); 
 
   // Stile dinamico per il contenitore della scia
