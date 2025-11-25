@@ -12,13 +12,12 @@ const textVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.6 } },
 };
 
-// --- NUOVO COMPONENTE: SVG che Traccia lo Scroll ---
-const ScrollPathSVG = () => {
-  const ref = useRef(null);
+// --- COMPONENTE: SVG che Traccia lo Scroll (MODIFICATO per inclinazione) ---
+const ScrollPathSVG = React.forwardRef(({ heightInViewBox = "1000", widthInViewBox = "100" }, ref) => {
   
-  // Traccia lo scroll del container in relazione alla viewport
+  // Traccia lo scroll sull'elemento referenziato (passato da HeroRef)
   const { scrollYProgress } = useScroll({
-    target: ref,
+    target: ref, 
     offset: ["start end", "end start"]
   });
 
@@ -29,18 +28,27 @@ const ScrollPathSVG = () => {
     restDelta: 0.001
   });
 
+  // Modifica il percorso per renderlo inclinato di ~45 gradi
+  // Il punto di partenza è (50, 0)
+  // Il punto finale è (100, 1000) per un'inclinazione verso destra (45 gradi se viewBox è quadrata)
+  // Manteniamo un po' di curva per un aspetto più organico
+  const pathD = `M 50 0 L 100 ${heightInViewBox}`; // Linea retta a 45 gradi (partendo da 50,0 e finendo a 100, altezza_totale)
+  // Per una curva più morbida come prima, ma inclinata:
+  // d="M 50 0 C 70 300, 80 500, 100 700 L 100 1000" // Esempio con curva
+  // Usiamo una linea dritta per ora per semplificare l'allineamento a 45 gradi
+  // Possiamo aggiustare i punti della curva se vogliamo più tardi
+
   return (
-    <div ref={ref} className="absolute inset-0 z-10 pointer-events-none">
+    <div className="absolute inset-0 z-10 pointer-events-none">
       <svg 
         width="100%" 
         height="100%" 
-        viewBox="0 0 100 1000" 
+        viewBox={`0 0 ${widthInViewBox} ${heightInViewBox}`} 
         preserveAspectRatio="xMidYMin slice" 
         className="w-full h-full"
       >
-        {/* Definisce il percorso (Linee di Corrente) */}
         <motion.path
-          d="M 50 0 C 50 300, 20 500, 50 700 L 50 1000"
+          d={pathD} // Usa il nuovo percorso inclinato
           fill="none"
           stroke="#FACC15"
           strokeWidth="4"
@@ -51,8 +59,10 @@ const ScrollPathSVG = () => {
       </svg>
     </div>
   );
-};
-// --- FINE NUOVO COMPONENTE ---
+});
+
+ScrollPathSVG.displayName = 'ScrollPathSVG';
+// --- FINE ScrollPathSVG MODIFICATO ---
 
 // Logo del brand
 const Logo = () => (
@@ -93,7 +103,6 @@ const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
-    // Gestione dello scrolling
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
@@ -106,14 +115,12 @@ const Navbar = () => {
   ];
 
   return (
-    // CORREZIONE: Classi su linea singola per evitare errori di transpilazione.
     <nav className={`fixed w-full z-50 transition-all duration-500 ${isScrolled ? 'py-3 bg-slate-950/95 backdrop-blur-lg border-b border-white/5 shadow-2xl' : 'py-6 bg-transparent'}`}>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
         <Logo />
         
         {/* Navigazione Desktop */}
         <div className="hidden md:flex items-center gap-8">
-          {/* CORREZIONE: map function su linea unica per evitare l'errore 'Unexpected newline before "=>"' */}
           {navLinks.map((link) => (
             <a
               key={link.name} 
@@ -145,7 +152,6 @@ const Navbar = () => {
         className="md:hidden absolute top-full left-0 w-full bg-slate-900 border-b border-white/10 shadow-lg overflow-hidden"
       >
         <div className="flex flex-col p-4 gap-4">
-          {/* CORREZIONE: map function su linea unica per evitare l'errore 'Unexpected newline before "=>"' */}
           {navLinks.map((link) => (
             <a
               key={link.name} 
@@ -165,60 +171,159 @@ const Navbar = () => {
 
 // Sezione Eroe (Hero)
 const Hero = () => {
-  // 1. Nuovo stato per la posizione di partenza X
-  const [startX, setStartX] = useState('50%'); 
-  // 2. Ref per l'elemento visivo dell'impianto (l'icona al centro)
+  const [startX, setStartX] = useState(null); 
+  const [startY, setStartY] = useState(null); 
+  const [pathHeight, setPathHeight] = useState('50vh'); // Nuova altezza dinamica per la scia
+  const heroRef = useRef(null); 
   const imageRef = useRef(null); 
 
-  // Calcola la posizione X dell'immagine quando il componente è montato o quando la finestra cambia dimensione
   useEffect(() => {
-    const calculateStartX = () => {
-      if (imageRef.current) {
-        const rect = imageRef.current.getBoundingClientRect();
-        // Calcola il centro assoluto X dell'elemento visivo
-        const centerAbsoluteX = rect.left + rect.width / 2;
+    const calculatePosition = () => {
+      if (imageRef.current && heroRef.current) {
+        const imageRect = imageRef.current.getBoundingClientRect();
+        const heroRect = heroRef.current.getBoundingClientRect();
+
+        // X: centro dell'immagine rispetto al bordo sinistro della sezione Hero
+        const centerAbsoluteX = imageRect.left + imageRect.width / 2;
+        const centerRelativeXToHero = centerAbsoluteX - heroRect.left;
         
-        // Calcola la X relativa al container principale (che è centrato con `container mx-auto`)
-        // Per semplicità, useremo la X relativa al centro della viewport
-        const viewportCenter = window.innerWidth / 2;
+        // Y: bordo inferiore dell'immagine rispetto al top della sezione Hero
+        const bottomRelativeYToHero = imageRect.bottom - heroRect.top;
         
-        // Calcola lo spostamento del centro dell'immagine dal centro del viewport
-        // Sposta il container della scia di conseguenza
-        const offsetFromCenter = centerAbsoluteX - viewportCenter;
-        
-        // L'elemento SVG della scia è centrato (`left-1/2 -translate-x-1/2`),
-        // quindi dobbiamo aggiungere l'offset a quel punto.
-        setStartX(`calc(50% + ${offsetFromCenter}px)`);
+        if (imageRect.width === 0) { // L'elemento è nascosto (es. mobile)
+            setStartX(null);
+            setStartY(null);
+            setPathHeight('50vh'); // Torna all'altezza di default
+        } else {
+            setStartX(centerRelativeXToHero);
+            setStartY(bottomRelativeYToHero);
+            // Calcola l'altezza rimanente della sezione Hero dopo il punto di partenza della scia
+            setPathHeight(`${heroRect.height - bottomRelativeYToHero}px`);
+        }
       } else {
-        // Fallback per schermi piccoli (mobile) dove l'immagine è nascosta
-        setStartX('50%'); 
+        setStartX(null);
+        setStartY(null);
+        setPathHeight('50vh');
       }
     };
 
-    calculateStartX();
-    window.addEventListener('resize', calculateStartX);
+    calculatePosition();
+    window.addEventListener('resize', calculatePosition);
 
-    return () => window.removeEventListener('resize', calculateStartX);
+    // Esegui la funzione anche se l'immagine potrebbe non essere subito caricata
+    // Utile per assicurarsi che i ref siano popolati
+    const timeout = setTimeout(calculatePosition, 100); 
+
+    return () => {
+      window.removeEventListener('resize', calculatePosition);
+      clearTimeout(timeout);
+    };
   }, []);
 
+  // Stile dinamico per il container della scia
+  const scrollPathContainerStyle = {
+    // Il div della scia ha larghezza 10px. Vogliamo che il centro (5px) sia a startX
+    left: startX !== null ? `${startX - 5}px` : '50%', 
+    top: startY !== null ? `${startY}px` : 'auto', 
+    height: pathHeight, // Altezza dinamica
+    transform: startX === null || startY === null ? 'translateX(-50%)' : 'none', 
+    // Larghezza del container della scia per accogliere l'inclinazione
+    // Se la scia deve andare giù di 1000 unità e spostarsi di 50 unità orizzontalmente
+    // Per una linea a 45 gradi circa (50 unità orizzontali per ogni 1000 verticali, 1000/50 = 20)
+    // Se vogliamo 45 gradi "veri" dovremmo avere la stessa variazione X e Y
+    // Per ottenere un'inclinazione visiva di circa 45 gradi con un'altezza variabile,
+    // dobbiamo dare al container una larghezza proporzionale all'altezza e all'inclinazione desiderata.
+    // Una pendenza di 1:1 (45 gradi) significa che per ogni 1px verticale, c'è 1px orizzontale.
+    // Il nostro viewBox è 100x1000. La linea va da x=50 a x=100 (50 unità). Per 1000 unità verticali.
+    // Quindi la pendenza è 50/1000 = 1/20. Per un'inclinazione di 45°, avremmo bisogno di 1000 di larghezza.
+    // Impostiamo la larghezza in base all'altezza calcolata e un fattore di pendenza.
+    // Useremo una larghezza fissa per l'SVG (es. 100) e un path che si adatta.
+    // Per avere una pendenza di ~45 gradi visivi, l'SVG deve avere larghezza e altezza simili nel DOM.
+    // Data l'altezza dinamica, è meglio dare al container una larghezza basata su quell'altezza.
+    // Per 45 gradi, width = height. Ma l'SVG ha una larghezza di 10px nel DOM.
+    // L'SVG ha width="100%" e height="100%". La ViewBox è 100x1000.
+    // Se il div è 10px di larghezza e 500px di altezza, lo SVG sarà schiacciato.
+    // Dobbiamo estendere il `width` del div e anche il `viewBox` dell'SVG.
+    width: startX !== null ? `calc(10px + ${parseFloat(pathHeight) / 10}px)` : '10px', // Esempio per circa 45 gradi
+  };
+
+  // Se la scia deve essere a 45 gradi, la sua larghezza deve essere uguale alla sua altezza.
+  // Ma non vogliamo che la scia sia larga centinaia di pixel.
+  // Invece di far pendere l'intero div, faremo in modo che il path SVG si inclini all'interno
+  // di un div di larghezza controllata.
+
+  // Per mantenere l'SVG di 10px di larghezza nel DOM ma avere un path inclinato:
+  // Dobbiamo cambiare il `d` del path per andare da (50,0) a (X_FINALE, ALTEZZA_VIEWBOX).
+  // Se la ViewBox è 100x1000, una linea da (50,0) a (100,1000) è un'inclinazione di 50px su 1000px.
+  // Che non è 45 gradi. Per ~45 gradi visivi con un contenitore di 10px di larghezza,
+  // l'inclinazione dovrà essere molto piccola all'interno della ViewBox (es. 50,0 -> 51,1000).
+
   return (
-    <section className="relative min-h-screen flex flex-col pt-20 overflow-hidden bg-slate-950 z-10">
-      {/* ... (sfondo) */}
+    <section ref={heroRef} className="relative min-h-screen flex flex-col pt-20 overflow-hidden bg-slate-950 z-10">
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        {/* Animazione di sfondo energetica */}
+        <div className="absolute top-[-20%] right-[-10%] w-[50vw] min-w-[300px] h-[50vw] min-h-[300px] bg-blue-600/10 rounded-full blur-[100px] animate-pulse" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[60vw] min-w-[300px] h-[60vw] min-h-[300px] bg-yellow-400/5 rounded-full blur-[80px] animate-none" />
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10" />
+      </div>
 
       {/* Contenuto Principale */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10 grid lg:grid-cols-12 gap-12 items-center flex-grow">
-        {/* ... (Contenuto Testuale) */}
         <motion.div 
-          // ... (varianti)
+          className="lg:col-span-7 pt-12 lg:pt-0"
+          initial="hidden"
+          animate="visible"
+          variants={{
+            visible: { 
+              transition: { 
+                staggerChildren: 0.2, 
+                delayChildren: 0.3 
+              } 
+            }
+          }}
         >
-          {/* ... (testo e bottoni) */}
+          {/* Tagline di Servizio */}
+          <motion.div variants={textVariants} className="flex flex-wrap gap-3 mb-6">
+            <ServiceTag text="PRONTO INTERVENTO H24" icon={Clock} />
+            <ServiceTag text="CERTIFICAZIONE GARANTITA" icon={CheckCircle2} />
+          </motion.div>
+          
+          <motion.h1 
+            variants={textVariants}
+            className="text-5xl md:text-7xl lg:text-8xl font-black text-white leading-tight tracking-tight mb-6"
+          >
+            LA TUA ENERGIA
+<br />
+            <span
+className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400
+via-yellow-200 to-white">
+              A NORMA.
+            </span>
+          </motion.h1>
+          
+          <motion.p 
+            variants={textVariants}
+            className="text-lg md:text-xl text-slate-400 mb-10 max-w-xl leading-relaxed"
+          >
+            Specialisti in progettazione, installazione e manutenzione di impianti elettrici certificati, domotici e fotovoltaici.
+          </motion.p>
+          
+          <motion.div variants={textVariants} className="flex flex-wrap gap-4 items-center">
+            <ElectricButton text="Richiedi Sopralluogo" />
+            <a
+              href="#servizi" 
+              className="px-6 py-3 group flex items-center gap-2 font-semibold text-white border-2 border-transparent hover:border-yellow-400/50 rounded-lg transition-colors"
+            >
+              Scopri di più
+              <ChevronRight className="w-5 h-5 text-yellow-400 group-hover:text-white group-hover:translate-x-1 transition-transform" />
+            </a>
+          </motion.div>
         </motion.div>
         
         {/* Icona 3D Impianto (Elemento visivo) */}
         <div
           className="lg:col-span-5 relative hidden lg:flex items-center justify-center h-full min-h-[400px]"
         >
-          {/* 3. Collega il ref all'elemento dell'immagine */}
           <motion.div 
             ref={imageRef} 
             initial={{ opacity: 0, scale: 0.8, rotate: 10 }}
@@ -235,20 +340,20 @@ const Hero = () => {
         </div>
       </div>
 
-      {/* INTEGRAZIONE DEL NUOVO ELEMENTO DI SCROLL */}
-      <div className="flex justify-center -mt-20 h-[50vh] relative">
-        {/* 4. Applica lo stile dinamico calcolato */}
-        <div 
-          className="w-[10px] h-full absolute top-0"
-          style={{ left: startX }}
-        >
-          <ScrollPathSVG />
-        </div>
+      {/* INTEGRAZIONE DEL NUOVO ELEMENTO DI SCROLL - Con posizione e altezza dinamiche */}
+      <div 
+        className="absolute z-20 pointer-events-none" 
+        style={scrollPathContainerStyle}
+      >
+        {/* PASSA heroRef A SCROLLPATHSVG */}
+        {/* Ora widthInViewBox deve essere più grande per contenere l'inclinazione */}
+        <ScrollPathSVG ref={heroRef} heightInViewBox={1000} widthInViewBox={200} /> 
       </div>
       
     </section>
   );
 };
+ 
 // Componente per le Tagline di Servizio
 const ServiceTag = ({ text, icon: Icon }) => (
     <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/50 border border-yellow-500/30 text-slate-200 text-xs font-bold whitespace-nowrap uppercase tracking-wider`}>
@@ -256,7 +361,7 @@ const ServiceTag = ({ text, icon: Icon }) => (
         {text}
     </div>
 );
-
+ 
 // Componente Card del Servizio
 const ServiceCard = ({ icon: Icon, title, desc, delay }) => (
     <motion.div
@@ -279,7 +384,7 @@ hover:text-white transition-colors">
       </a>
     </motion.div>
 );
-
+ 
 // Sezione Servizi (Grid Layout)
 const ServicesGrid = () => {
     const services = [
@@ -290,7 +395,7 @@ const ServicesGrid = () => {
       { icon: Lightbulb, title: "Illuminazione LED", desc: "Soluzioni di illuminazione ad alta efficienza e design, incluse l'illuminazione pubblica e industriale." },
       { icon: Cpu, title: "Automazione Domotica", desc: "Integrazione completa di riscaldamento, clima, sicurezza e multimedia in un unico sistema gestibile da remoto." },
     ];
-
+ 
     return (
       <section id="servizi" className="py-24 bg-slate-950">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -299,10 +404,9 @@ const ServicesGrid = () => {
                   <p className="text-yellow-400 uppercase font-bold text-sm mb-2">I Nostri Servizi Core</p>
                   <h2 className="text-4xl md:text-5xl font-bold text-white">Tecnologia, Sicurezza, Efficienza.</h2>
               </div>
-
+ 
               {/* Griglia di Card */}
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {/* CORREZIONE: map function su linea unica */}
                   {services.map((service, index) => (
                       <ServiceCard key={index} {...service} delay={index * 0.15} />
                   ))}
@@ -311,7 +415,7 @@ const ServicesGrid = () => {
       </section>
     );
 };
-
+ 
 // Componente Vantaggio con animazione
 const BenefitItem = ({ icon: Icon, title, desc, delay }) => (
   <motion.div
@@ -331,7 +435,7 @@ bg-yellow-400/10 text-yellow-400 flex-shrink-0">
     </div>
   </motion.div>
 );
-
+ 
 // Sezione Vantaggi (Perché Sceglierci)
 const Benefits = () => {
   const benefits = [
@@ -340,7 +444,7 @@ const Benefits = () => {
     { icon: Layers, title: "Soluzioni Chiavi in Mano", desc: "Dalla progettazione alla messa in opera, gestiamo ogni fase del tuo progetto senza stress per te." },
     { icon: HardHat, title: "Team Qualificato", desc: "I nostri tecnici sono costantemente aggiornati sulle ultime tecnologie e protocolli di sicurezza." },
   ];
-
+ 
   return (
     <section id="vantaggi" className="py-24 bg-slate-900">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -355,10 +459,9 @@ const Benefits = () => {
             </p>
             <ElectricButton text="Inizia la tua Trasformazione" />
           </div>
-
+ 
           {/* Lista dei Vantaggi */}
           <div className="space-y-6">
-            {/* CORREZIONE: map function su linea unica */}
             {benefits.map((benefit, index) => (
               <BenefitItem key={index} {...benefit} delay={index * 0.1} />
             ))}
@@ -368,23 +471,21 @@ const Benefits = () => {
     </section>
   );
 };
-
-
+ 
+ 
 // Sezione Contatti con Form
 const Contact = () => {
   // Funzione fittizia per la sottomissione
   const handleSubmit = (e) => {
     e.preventDefault();
-    // In un ambiente reale, qui ci sarebbe la logica per inviare i dati.
     console.log("Dati inviati per il preventivo.");
-    // Simulo un messaggio di successo
     document.getElementById('contact-message').textContent = "Richiesta inviata! Sarai ricontattato a breve.";
     document.getElementById('contact-message').classList.remove('hidden');
     setTimeout(() => {
         document.getElementById('contact-message').classList.add('hidden');
     }, 4000);
   };
-
+ 
   return (
     <section id="contatti" className="py-24 bg-slate-950 relative overflow-hidden">
        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -420,47 +521,4 @@ const Contact = () => {
             ></textarea>
             
             <button
-              type="submit" 
-              className="w-full py-3 bg-yellow-400 text-slate-900 font-bold rounded-lg hover:bg-yellow-300 transition-all uppercase text-lg shadow-xl shadow-yellow-400/30"
-            >
-              Invia la Mia Richiesta
-            </button>
-          </motion.form>
-       </div>
-    </section>
-  );
-};
-
-// Footer (Piè di Pagina)
-const Footer = () => (
-  <footer className="bg-slate-950 text-slate-500 py-10 border-t border-white/10">
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
-      <div className="flex flex-col gap-2 items-center md:items-start">
-        <Logo />
-        <p className="text-xs mt-2 text-slate-600">P.IVA 01234567890 | Via dell'Energia, 1 - 00100 Roma (RM)</p>
-        <p className="text-xs text-slate-400">© 2024 FlashImpianti. Tutti i diritti riservati.</p>
-      </div>
-      <div className="flex gap-4 text-sm font-medium">
-        <a href="#" className="hover:text-yellow-400 transition-colors">Privacy Policy</a>
-        <a href="#" className="hover:text-yellow-400 transition-colors">Termini di Servizio</a>
-      </div>
-    </div>
-  </footer>
-);
-
-// Componente Principale App
-export default function App() {
-  return (
-    <div className="bg-slate-950 min-h-screen font-sans text-slate-200 selection:bg-yellow-400 selection:text-black overflow-x-hidden">
-      
-      <Navbar />
-      <main>
-        <Hero />
-        <ServicesGrid />
-        <Benefits />
-        <Contact />
-      </main>
-      <Footer />
-    </div>
-  );
-}
+              type="submit"
