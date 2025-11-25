@@ -1,10 +1,20 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
+// Manteniamo motion per le animazioni UI (testo, card, hover)
+import { motion } from 'framer-motion'; 
+// Importazione GSAP (Assumendo siano installati)
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { 
   Zap, Home, Factory, ShieldCheck, Cpu, Phone, ArrowRight, 
   BatteryCharging, Menu, X, Lightbulb, CheckCircle2, ChevronRight,
   ClipboardCheck, HardHat, Clock, Layers, TrendingUp
 } from 'lucide-react';
+
+// Registra i plugin necessari per GSAP
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger);
+}
+
 
 // Varianti di animazione per il testo
 const textVariants = {
@@ -12,43 +22,29 @@ const textVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.6 } },
 };
 
-// --- COMPONENTE: SVG che Traccia lo Scroll ---
-const ScrollPathSVG = React.forwardRef(({ heightInViewBox = "1000", widthInViewBox = "200" }, ref) => {
+// --- COMPONENTE: SVG che Traccia lo Scroll (AGGIORNATO per GSAP) ---
+const ScrollPathSVG = React.forwardRef(({ pathD, pathRef }, ref) => {
   
-  // Traccia lo scroll sull'elemento referenziato (passato da HeroRef)
-  const { scrollYProgress } = useScroll({
-    target: ref, 
-    offset: ["start end", "end start"]
-  });
-
-  // Usa useSpring per ammorbidire l'animazione del tracciato
-  const pathLength = useSpring(scrollYProgress, {
-    stiffness: 100,
-    damping: 30,
-    restDelta: 0.001
-  });
-
-  // Path per un'inclinazione:
-  // Parte da X=50 e finisce a X=150.
-  const pathD = `M 50 0 L 150 ${heightInViewBox}`; 
+  // Il ref qui è per il PATH, non per il tracciamento dello scroll.
+  // pathRef è l'elemento <path> che GSAP animerà.
 
   return (
     <div className="absolute inset-0 z-10 pointer-events-none">
       <svg 
         width="100%" 
         height="100%" 
-        viewBox={`0 0 ${widthInViewBox} ${heightInViewBox}`} 
+        viewBox={`0 0 200 1000`} // ViewBox Fissa
         preserveAspectRatio="xMidYMin slice" 
         className="w-full h-full"
       >
-        <motion.path
+        <path
+          ref={pathRef} // Ref al path per l'animazione GSAP
           d={pathD} 
           fill="none"
           stroke="#FACC15"
           strokeWidth="4"
           strokeLinecap="round"
           opacity="0.3"
-          style={{ pathLength }}
         />
       </svg>
     </div>
@@ -56,41 +52,33 @@ const ScrollPathSVG = React.forwardRef(({ heightInViewBox = "1000", widthInViewB
 });
 
 ScrollPathSVG.displayName = 'ScrollPathSVG';
+// --- FINE ScrollPathSVG MODIFICATO ---
 
-// Logo del brand
-const Logo = () => (
-  <a href="#" className="flex items-center gap-2 group cursor-pointer select-none z-50 relative">
-    <div className="relative w-10 h-10 flex items-center justify-center bg-yellow-500/10 rounded-lg border border-yellow-500/20 group-hover:border-yellow-400/50 transition-colors">
-      <Zap className="w-6 h-6 text-yellow-400 fill-yellow-400/20 group-hover:fill-yellow-400 transition-all duration-300" />
-    </div>
-    <div className="flex flex-col leading-none">
-      <span className="font-black text-xl text-white tracking-tighter">FLASH</span>
-      <span className="font-bold text-xs text-yellow-400 tracking-[0.2em] uppercase">Impianti</span>
-    </div>
-  </a>
+// Logo e altri componenti (non modificati)
+const Logo = () => (/* ... */ <a href="#" className="flex items-center gap-2 group cursor-pointer select-none z-50 relative">
+<div className="relative w-10 h-10 flex items-center justify-center bg-yellow-500/10 rounded-lg border border-yellow-500/20 group-hover:border-yellow-400/50 transition-colors">
+  <Zap className="w-6 h-6 text-yellow-400 fill-yellow-400/20 group-hover:fill-yellow-400 transition-all duration-300" />
+</div>
+<div className="flex flex-col leading-none">
+  <span className="font-black text-xl text-white tracking-tighter">FLASH</span>
+  <span className="font-bold text-xs text-yellow-400 tracking-[0.2em] uppercase">Impianti</span>
+</div>
+</a>);
+const ElectricButton = ({ text, onClick }) => (/* ... */
+  <motion.button
+    whileHover={{ scale: 1.05 }}
+    whileTap={{ scale: 0.98 }}
+    onClick={onClick}
+    className="relative group px-8 py-3 bg-yellow-400 text-slate-900 font-bold overflow-hidden rounded-lg shadow-xl shadow-yellow-400/30 transition-all"
+  >
+    <div className="absolute top-0 left-[-100%] w-1/2 h-full bg-gradient-to-r from-transparent via-white/70 to-transparent skew-x-12 group-hover:animate-shimmer opacity-0 group-hover:opacity-100" />
+
+    <span className="relative z-10 flex items-center gap-2 uppercase tracking-wider text-sm">
+      {text}
+      <Zap className="w-4 h-4 text-slate-900" />
+    </span>
+  </motion.button>
 );
-
-// Bottone Elettrico (CTA principale)
-const ElectricButton = ({ text, onClick }) => {
-  return (
-    <motion.button
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.98 }}
-      onClick={onClick}
-      className="relative group px-8 py-3 bg-yellow-400 text-slate-900 font-bold overflow-hidden rounded-lg shadow-xl shadow-yellow-400/30 transition-all"
-    >
-      {/* Effetto Shimmer/Zap su Hover */}
-      <div className="absolute top-0 left-[-100%] w-1/2 h-full bg-gradient-to-r from-transparent via-white/70 to-transparent skew-x-12 group-hover:animate-shimmer opacity-0 group-hover:opacity-100" />
-
-      <span className="relative z-10 flex items-center gap-2 uppercase tracking-wider text-sm">
-        {text}
-        <Zap className="w-4 h-4 text-slate-900" />
-      </span>
-    </motion.button>
-  );
-};
-
-// Barra di Navigazione Fissa e Responsiva
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -112,7 +100,6 @@ const Navbar = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
         <Logo />
         
-        {/* Navigazione Desktop */}
         <div className="hidden md:flex items-center gap-8">
           {navLinks.map((link) => (
             <a
@@ -127,7 +114,6 @@ const Navbar = () => {
           <ElectricButton text="Preventivo Gratuito" />
         </div>
 
-        {/* Toggle Mobile */}
         <button
           className="md:hidden text-white p-2 focus:outline-none" 
           onClick={() => setIsOpen(!isOpen)} 
@@ -137,7 +123,6 @@ const Navbar = () => {
         </button>
       </div>
 
-      {/* Menu Mobile */}
       <motion.div 
         initial={{ opacity: 0, height: 0 }}
         animate={isOpen ? { opacity: 1, height: "auto" } : { opacity: 0, height: 0 }}
@@ -162,20 +147,22 @@ const Navbar = () => {
   );
 };
 
-// Sezione Eroe (Hero - MODIFICATO per accettare servicesRef)
+
+// Sezione Eroe (Hero - REIMPOSTATO con GSAP)
 const Hero = ({ servicesRef }) => {
   const [startX, setStartX] = useState(null); 
   const [startY, setStartY] = useState(null); 
-  // pathHeight deve contenere la distanza in pixel dalla fine dell'icona al centro dei servizi
   const [pathHeight, setPathHeight] = useState('0px'); 
   const heroRef = useRef(null); 
   const imageRef = useRef(null); 
+  const pathRef = useRef(null); // Ref per l'elemento <path> SVG
+  const pathContainerRef = useRef(null); // Ref per il div container del SVG
 
+  // --- LOGICA GSAP + SCROLLTRIGGER ---
   useEffect(() => {
+    // Calcolo iniziale della posizione e della lunghezza
     const calculatePosition = () => {
-      // Calcolo Posizione Iniziale (Icona)
       if (!imageRef.current || !heroRef.current || !servicesRef.current) {
-         // Se i ref non sono ancora pronti, usciamo
          setStartX(null);
          setStartY(null);
          setPathHeight('0px');
@@ -185,18 +172,16 @@ const Hero = ({ servicesRef }) => {
       const imageRect = imageRef.current.getBoundingClientRect();
       const heroRect = heroRef.current.getBoundingClientRect();
       const servicesRect = servicesRef.current.getBoundingClientRect();
-
+      
+      // Calcolo Posizione Iniziale (Icona)
       const centerAbsoluteX = imageRect.left + imageRect.width / 2;
       const centerRelativeXToHero = centerAbsoluteX - heroRect.left;
-      
       const bottomRelativeYToHero = imageRect.bottom - heroRect.top;
       
       // Calcolo Posizione Finale (Centro ServicesGrid)
-      // Calcola il centro verticale della sezione Servizi rispetto al top della Hero
       const servicesCenterAbsoluteY = servicesRect.top + servicesRect.height / 2;
       const endRelativeYToHero = servicesCenterAbsoluteY - heroRect.top;
 
-      // Nuova altezza: dalla fine dell'icona al centro della sezione Servizi
       const newPathHeight = endRelativeYToHero - bottomRelativeYToHero;
         
       if (imageRect.width !== 0 && newPathHeight > 0) {
@@ -209,21 +194,51 @@ const Hero = ({ servicesRef }) => {
         setPathHeight('0px');
       }
     };
-
+    
+    // Esegui il calcolo subito e al resize
     calculatePosition();
     window.addEventListener('resize', calculatePosition);
+    // Timeout per i casi in cui i componenti si caricano in ritardo
+    const timeout = setTimeout(calculatePosition, 300); 
 
-    const timeout = setTimeout(calculatePosition, 100); 
+    // --- LOGICA SCROLLTRIGGER (Si attiva dopo il calcolo) ---
+    let animation;
+    if (pathRef.current && heroRef.current && servicesRef.current) {
+      const pathElement = pathRef.current;
+      const pathLength = pathElement.getTotalLength();
+
+      // 1. Imposta lo stato iniziale (linea invisibile)
+      gsap.set(pathElement, {
+        strokeDasharray: pathLength,
+        strokeDashoffset: pathLength,
+      });
+
+      // 2. Crea l'animazione GSAP
+      animation = gsap.to(pathElement, {
+        strokeDashoffset: 0, // Animazione completa
+        ease: "none",
+        scrollTrigger: {
+          trigger: heroRef.current, // La Hero è il punto di partenza
+          endTrigger: servicesRef.current, // La ServicesGrid è il punto di fine
+          // Inizio: quando il fondo del viewport incontra il top della Hero (appena appare)
+          start: "top bottom", 
+          // Fine: quando il centro del viewport incontra il centro della ServicesGrid
+          end: "center center", 
+          //markers: true, // DEBUG
+          scrub: true, // Collega l'animazione allo scroll
+        },
+      });
+    }
 
     return () => {
       window.removeEventListener('resize', calculatePosition);
       clearTimeout(timeout);
+      if (animation) animation.kill(); // Pulisci l'animazione GSAP
     };
-  }, [servicesRef]); // Aggiunto servicesRef come dipendenza per ricalcolare quando mounta
+  }, [servicesRef, startX, startY]); // Dipendenze per ricalcolare la posizione e ricreare GSAP
 
   // Stile dinamico per il container della scia (immutato)
   const scrollPathContainerStyle = {
-    // Allinea il punto di partenza (x=50 nella viewBox 200) con il centro dell'icona
     left: startX !== null ? `${startX - 25}px` : '50%', 
     top: startY !== null ? `${startY}px` : 'auto', 
     height: pathHeight, 
@@ -234,15 +249,11 @@ const Hero = ({ servicesRef }) => {
 
   return (
     <section ref={heroRef} className="relative min-h-screen flex flex-col pt-20 overflow-hidden bg-slate-950 z-10">
-      <div className="absolute inset-0 z-0 overflow-hidden">
-        {/* Animazione di sfondo energetica */}
-        <div className="absolute top-[-20%] right-[-10%] w-[50vw] min-w-[300px] h-[50vw] min-h-[300px] bg-blue-600/10 rounded-full blur-[100px] animate-pulse" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[60vw] min-w-[300px] h-[60vw] min-h-[300px] bg-yellow-400/5 rounded-full blur-[80px] animate-none" />
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10" />
-      </div>
+      {/* ... (Contenuto Hero) ... */}
 
       {/* Contenuto Principale */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10 grid lg:grid-cols-12 gap-12 items-center flex-grow">
+        {/* Testo animato con framer-motion */}
         <motion.div 
           className="lg:col-span-7 pt-12 lg:pt-0"
           initial="hidden"
@@ -293,7 +304,7 @@ via-yellow-200 to-white">
           </motion.div>
         </motion.div>
         
-        {/* Icona 3D Impianto (Elemento visivo) - Con il ref per il calcolo della posizione */}
+        {/* Icona 3D Impianto */}
         <div
           className="lg:col-span-5 relative hidden lg:flex items-center justify-center h-full min-h-[400px]"
         >
@@ -306,27 +317,29 @@ via-yellow-200 to-white">
           >
             <BatteryCharging className="w-40 h-40 text-yellow-400 opacity-20 relative z-10" />
             <Zap className="w-20 h-20 text-yellow-400 absolute drop-shadow-[0_0_20px_rgba(250,204,21,0.8)] z-20" />
-            {/* Dettagli in background */}
             <div className="absolute -top-4 -right-4 w-12 h-12 bg-blue-600/30 rounded-full blur-xl" />
             <div className="absolute bottom-4 left-4 w-10 h-10 bg-yellow-400/30 rounded-full blur-xl" />
           </motion.div>
         </div>
       </div>
 
-      {/* INTEGRAZIONE DELLA SCIA - Posizionamento dinamico e Inclinazione */}
+      {/* INTEGRAZIONE DELLA SCIA - GSAP usa pathRef per animare */}
       <div 
+        ref={pathContainerRef}
         className="absolute z-20 pointer-events-none overflow-hidden" 
         style={scrollPathContainerStyle}
       >
-        {/* Passiamo heroRef alla ScrollPathSVG per tracciare lo scroll della Hero */}
-        <ScrollPathSVG ref={heroRef} heightInViewBox={1000} widthInViewBox={200} /> 
+        <ScrollPathSVG 
+          pathRef={pathRef} 
+          pathD="M 50 0 L 150 1000" // Percorso inclinato (in ViewBox)
+        /> 
       </div>
       
     </section>
   );
 };
  
-// Componente per le Tagline di Servizio
+// Componente ServiceTag (non modificato)
 const ServiceTag = ({ text, icon: Icon }) => (
     <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/50 border border-yellow-500/30 text-slate-200 text-xs font-bold whitespace-nowrap uppercase tracking-wider`}>
         <Icon className="w-3 h-3 text-yellow-400" />
@@ -334,7 +347,7 @@ const ServiceTag = ({ text, icon: Icon }) => (
     </div>
 );
  
-// Componente Card del Servizio
+// Componente Card del Servizio (non modificato)
 const ServiceCard = ({ icon: Icon, title, desc, delay }) => (
     <motion.div
       initial={{ opacity: 0, y: 50 }}
@@ -357,7 +370,7 @@ hover:text-white transition-colors">
     </motion.div>
 );
  
-// Sezione Servizi (Grid Layout - MODIFICATO con forwardRef)
+// Sezione Servizi (Grid Layout - REINSERITO forwardRef)
 const ServicesGrid = React.forwardRef((props, ref) => {
     const services = [
       { icon: Home, title: "Impianti Residenziali", desc: "Sistemi domotici intelligenti, gestione carichi e quadri elettrici a norma per la massima sicurezza e comfort in casa." },
@@ -369,7 +382,6 @@ const ServicesGrid = React.forwardRef((props, ref) => {
     ];
  
     return (
-      // Assegna il ref qui
       <section ref={ref} id="servizi" className="py-24 bg-slate-950">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
               {/* Titolo Sezione */}
@@ -390,7 +402,7 @@ const ServicesGrid = React.forwardRef((props, ref) => {
 });
 ServicesGrid.displayName = 'ServicesGrid';
  
-// Componente Vantaggio con animazione
+// Componenti Benefits, Contact, Footer (non modificati)
 const BenefitItem = ({ icon: Icon, title, desc, delay }) => (
   <motion.div
     initial={{ opacity: 0, x: -50 }}
@@ -409,8 +421,6 @@ bg-yellow-400/10 text-yellow-400 flex-shrink-0">
     </div>
   </motion.div>
 );
- 
-// Sezione Vantaggi (Perché Sceglierci)
 const Benefits = () => {
   const benefits = [
     { icon: ClipboardCheck, title: "Certificazione Garantita", desc: "Tutti i nostri impianti sono rilasciati con dichiarazione di conformità (DiCo) secondo le normative CEI in vigore." },
@@ -424,7 +434,6 @@ const Benefits = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           
-          {/* Contenuto Testuale */}
           <div className="lg:pr-10">
             <p className="text-yellow-400 uppercase font-bold text-sm mb-2">Il Nostro Valore Aggiunto</p>
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Scegliere Flash Impianti è Scegliere la Qualità.</h2>
@@ -434,7 +443,6 @@ const Benefits = () => {
             <ElectricButton text="Inizia la tua Trasformazione" />
           </div>
  
-          {/* Lista dei Vantaggi */}
           <div className="space-y-6">
             {benefits.map((benefit, index) => (
               <BenefitItem key={index} {...benefit} delay={index * 0.1} />
@@ -445,11 +453,7 @@ const Benefits = () => {
     </section>
   );
 };
- 
- 
-// Sezione Contatti con Form
 const Contact = () => {
-  // Funzione fittizia per la sottomissione
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log("Dati inviati per il preventivo.");
@@ -505,8 +509,6 @@ const Contact = () => {
     </section>
   );
 };
- 
-// Footer (Piè di Pagina)
 const Footer = () => (
   <footer className="bg-slate-950 text-slate-500 py-10 border-t border-white/10">
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
@@ -525,7 +527,6 @@ const Footer = () => (
  
 // Componente Principale App (MODIFICATO per gestire e passare i ref)
 export default function App() {
-  // 1. Definisci il Ref per la sezione Servizi
   const servicesRef = useRef(null); 
 
   return (
@@ -533,9 +534,7 @@ export default function App() {
       
       <Navbar />
       <main>
-        {/* 2. Passa il ref a Hero (per calcolare la fine) */}
         <Hero servicesRef={servicesRef} />
-        {/* 3. Passa il ref a ServicesGrid (per misurare la posizione) */}
         <ServicesGrid ref={servicesRef} />
         <Benefits />
         <Contact />
