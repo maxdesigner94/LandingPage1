@@ -1,7 +1,6 @@
 import React, { useRef, useState, useLayoutEffect } from 'react';
-// Manteniamo motion per le animazioni UI (testo, card, hover)
 import { motion } from 'framer-motion'; 
-// Importazione GSAP (Assumendo siano installati)
+// Importazione GSAP
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { 
@@ -15,7 +14,6 @@ if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
 }
 
-
 // Varianti di animazione per il testo
 const textVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -24,7 +22,6 @@ const textVariants = {
 
 // --- COMPONENTE: SVG che Traccia lo Scroll ---
 const ScrollPathSVG = React.forwardRef(({ pathD, pathRef }, ref) => {
-  
   return (
     <div className="absolute inset-0 z-10 pointer-events-none">
       <svg 
@@ -47,34 +44,42 @@ const ScrollPathSVG = React.forwardRef(({ pathD, pathRef }, ref) => {
     </div>
   );
 });
-
 ScrollPathSVG.displayName = 'ScrollPathSVG';
 
-// Logo e altri componenti (non modificati)
-const Logo = () => ( <a href="#" className="flex items-center gap-2 group cursor-pointer select-none z-50 relative">
-<div className="relative w-10 h-10 flex items-center justify-center bg-yellow-500/10 rounded-lg border border-yellow-500/20 group-hover:border-yellow-400/50 transition-colors">
-  <Zap className="w-6 h-6 text-yellow-400 fill-yellow-400/20 group-hover:fill-yellow-400 transition-all duration-300" />
-</div>
-<div className="flex flex-col leading-none">
-  <span className="font-black text-xl text-white tracking-tighter">FLASH</span>
-  <span className="font-bold text-xs text-yellow-400 tracking-[0.2em] uppercase">Impianti</span>
-</div>
-</a>);
-const ElectricButton = ({ text, onClick }) => (
-  <motion.button
-    whileHover={{ scale: 1.05 }}
-    whileTap={{ scale: 0.98 }}
-    onClick={onClick}
-    className="relative group px-8 py-3 bg-yellow-400 text-slate-900 font-bold overflow-hidden rounded-lg shadow-xl shadow-yellow-400/30 transition-all"
-  >
-    <div className="absolute top-0 left-[-100%] w-1/2 h-full bg-gradient-to-r from-transparent via-white/70 to-transparent skew-x-12 group-hover:animate-shimmer opacity-0 group-hover:opacity-100" />
-
-    <span className="relative z-10 flex items-center gap-2 uppercase tracking-wider text-sm">
-      {text}
-      <Zap className="w-4 h-4 text-slate-900" />
-    </span>
-  </motion.button>
+// Logo del brand
+const Logo = () => (
+  <a href="#" className="flex items-center gap-2 group cursor-pointer select-none z-50 relative">
+    <div className="relative w-10 h-10 flex items-center justify-center bg-yellow-500/10 rounded-lg border border-yellow-500/20 group-hover:border-yellow-400/50 transition-colors">
+      <Zap className="w-6 h-6 text-yellow-400 fill-yellow-400/20 group-hover:fill-yellow-400 transition-all duration-300" />
+    </div>
+    <div className="flex flex-col leading-none">
+      <span className="font-black text-xl text-white tracking-tighter">FLASH</span>
+      <span className="font-bold text-xs text-yellow-400 tracking-[0.2em] uppercase">Impianti</span>
+    </div>
+  </a>
 );
+
+// Bottone Elettrico (CTA principale)
+const ElectricButton = ({ text, onClick }) => {
+  return (
+    <motion.button
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={onClick}
+      className="relative group px-8 py-3 bg-yellow-400 text-slate-900 font-bold overflow-hidden rounded-lg shadow-xl shadow-yellow-400/30 transition-all"
+    >
+      {/* Effetto Shimmer/Zap su Hover */}
+      <div className="absolute top-0 left-[-100%] w-1/2 h-full bg-gradient-to-r from-transparent via-white/70 to-transparent skew-x-12 group-hover:animate-shimmer opacity-0 group-hover:opacity-100" />
+
+      <span className="relative z-10 flex items-center gap-2 uppercase tracking-wider text-sm">
+        {text}
+        <Zap className="w-4 h-4 text-slate-900" />
+      </span>
+    </motion.button>
+  );
+};
+
+// Barra di Navigazione Fissa e Responsiva
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -96,6 +101,7 @@ const Navbar = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
         <Logo />
         
+        {/* Navigazione Desktop */}
         <div className="hidden md:flex items-center gap-8">
           {navLinks.map((link) => (
             <a
@@ -110,6 +116,7 @@ const Navbar = () => {
           <ElectricButton text="Preventivo Gratuito" />
         </div>
 
+        {/* Toggle Mobile */}
         <button
           className="md:hidden text-white p-2 focus:outline-none" 
           onClick={() => setIsOpen(!isOpen)} 
@@ -119,6 +126,7 @@ const Navbar = () => {
         </button>
       </div>
 
+      {/* Menu Mobile */}
       <motion.div 
         initial={{ opacity: 0, height: 0 }}
         animate={isOpen ? { opacity: 1, height: "auto" } : { opacity: 0, height: 0 }}
@@ -143,52 +151,39 @@ const Navbar = () => {
   );
 };
 
-
-// Sezione Eroe (Hero - AGGIORNATO con useLayoutEffect e ScrollTrigger.refresh)
+// Sezione Eroe (Hero - REVISIONATO TOTALMENTE per GSAP)
 const Hero = ({ servicesRef }) => {
   const [startX, setStartX] = useState(null); 
   const [startY, setStartY] = useState(null); 
-  const [pathHeight, setPathHeight] = useState('0px'); 
   const heroRef = useRef(null); 
   const imageRef = useRef(null); 
   const pathRef = useRef(null); 
 
-  // Usiamo useLayoutEffect per garantire la misurazione prima che il DOM sia disegnato
+  // Usiamo useLayoutEffect per garantire la misurazione prima che il browser disegni
   useLayoutEffect(() => {
     
-    // Funzione di calcolo delle coordinate
+    // Funzione di calcolo delle coordinate di PARTENZA (Icona)
     const calculatePosition = () => {
-      if (!imageRef.current || !heroRef.current || !servicesRef.current) {
+      if (!imageRef.current || !heroRef.current) {
          setStartX(null);
          setStartY(null);
-         setPathHeight('0px');
          return;
       }
 
       const imageRect = imageRef.current.getBoundingClientRect();
       const heroRect = heroRef.current.getBoundingClientRect();
-      const servicesRect = servicesRef.current.getBoundingClientRect();
 
       // Calcolo Posizione Iniziale (Centro X Icona e Bordo Inferiore Y Icona, relative a Hero)
       const centerAbsoluteX = imageRect.left + imageRect.width / 2;
       const centerRelativeXToHero = centerAbsoluteX - heroRect.left;
       const bottomRelativeYToHero = imageRect.bottom - heroRect.top;
-      
-      // Calcolo Posizione Finale (Centro Y ServicesGrid, relativa a Hero)
-      const servicesCenterAbsoluteY = servicesRect.top + servicesRect.height / 2;
-      const endRelativeYToHero = servicesCenterAbsoluteY - heroRect.top;
-
-      // Altezza del path in pixel
-      const newPathHeight = endRelativeYToHero - bottomRelativeYToHero;
         
-      if (imageRect.width !== 0 && newPathHeight > 0) {
+      if (imageRect.width !== 0) {
         setStartX(centerRelativeXToHero);
         setStartY(bottomRelativeYToHero);
-        setPathHeight(`${newPathHeight}px`);
       } else {
         setStartX(null);
         setStartY(null);
-        setPathHeight('0px');
       }
     };
     
@@ -202,10 +197,8 @@ const Hero = ({ servicesRef }) => {
     // Primo calcolo
     refreshAndRecalc();
     
-    // Gestione Resize: ricalcola e aggiorna GSAP
+    // Gestione Resize e timeout di sicurezza
     window.addEventListener('resize', refreshAndRecalc);
-    
-    // Timeout di sicurezza: importante per attendere il caricamento di eventuali font/immagini asincroni
     const timeout = setTimeout(refreshAndRecalc, 300); 
 
     // --- LOGICA GSAP SCROLLTRIGGER ---
@@ -228,9 +221,9 @@ const Hero = ({ servicesRef }) => {
         scrollTrigger: {
           trigger: heroRef.current,
           endTrigger: servicesRef.current, 
-          // Inizio: quando il fondo del viewport incontra il top della Hero
-          start: "top bottom", 
-          // Fine: quando il centro del viewport incontra il centro della ServicesGrid
+          // INIZIO: Quando l'utente inizia a scrollare dalla cima
+          start: "top top", 
+          // FINE: Quando il centro della ServicesGrid incontra il centro del viewport
           end: "center center", 
           scrub: true,
         },
@@ -242,16 +235,15 @@ const Hero = ({ servicesRef }) => {
       clearTimeout(timeout);
       if (animation) animation.kill(); 
     };
-    // La dipendenza sui ref assicura che il setup GSAP sia ricreato se i ref sono nulli all'inizio
+    
   }, [servicesRef.current, imageRef.current]); 
 
-  // Stile dinamico per il container della scia
+  // Stile dinamico per il contenitore della scia: esteso per catturare l'animazione
   const scrollPathContainerStyle = {
-    // Posizionamento orizzontale: centro dell'icona - 25px (metà della larghezza visiva della traccia)
     left: startX !== null ? `${startX - 25}px` : '50%', 
     top: startY !== null ? `${startY}px` : 'auto', 
-    height: pathHeight, 
-    width: '100px', // Larghezza per contenere l'inclinazione
+    height: '200vh', // Estendi il contenitore oltre lo schermo
+    width: '100px', 
     transform: startX === null || startY === null ? 'translateX(-50%)' : 'none', 
   };
 
@@ -336,7 +328,7 @@ via-yellow-200 to-white">
         </div>
       </div>
 
-      {/* INTEGRAZIONE DELLA SCIA - GSAP usa pathRef per animare */}
+      {/* INTEGRAZIONE DELLA SCIA - GSAP gestisce l'arrivo */}
       <div 
         className="absolute z-20 pointer-events-none overflow-hidden" 
         style={scrollPathContainerStyle}
@@ -414,7 +406,7 @@ const ServicesGrid = React.forwardRef((props, ref) => {
 });
 ServicesGrid.displayName = 'ServicesGrid';
  
-// Componenti Benefits, Contact, Footer (omessi per brevità ma immutati)
+// Componente Vantaggio con animazione
 const BenefitItem = ({ icon: Icon, title, desc, delay }) => (
   <motion.div
     initial={{ opacity: 0, x: -50 }}
@@ -433,6 +425,8 @@ bg-yellow-400/10 text-yellow-400 flex-shrink-0">
     </div>
   </motion.div>
 );
+ 
+// Sezione Vantaggi (Perché Sceglierci)
 const Benefits = () => {
   const benefits = [
     { icon: ClipboardCheck, title: "Certificazione Garantita", desc: "Tutti i nostri impianti sono rilasciati con dichiarazione di conformità (DiCo) secondo le normative CEI in vigore." },
@@ -446,6 +440,7 @@ const Benefits = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           
+          {/* Contenuto Testuale */}
           <div className="lg:pr-10">
             <p className="text-yellow-400 uppercase font-bold text-sm mb-2">Il Nostro Valore Aggiunto</p>
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Scegliere Flash Impianti è Scegliere la Qualità.</h2>
@@ -455,6 +450,7 @@ const Benefits = () => {
             <ElectricButton text="Inizia la tua Trasformazione" />
           </div>
  
+          {/* Lista dei Vantaggi */}
           <div className="space-y-6">
             {benefits.map((benefit, index) => (
               <BenefitItem key={index} {...benefit} delay={index * 0.1} />
@@ -465,7 +461,11 @@ const Benefits = () => {
     </section>
   );
 };
+ 
+ 
+// Sezione Contatti con Form
 const Contact = () => {
+  // Funzione fittizia per la sottomissione
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log("Dati inviati per il preventivo.");
@@ -521,6 +521,8 @@ const Contact = () => {
     </section>
   );
 };
+ 
+// Footer (Piè di Pagina)
 const Footer = () => (
   <footer className="bg-slate-950 text-slate-500 py-10 border-t border-white/10">
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
@@ -537,7 +539,7 @@ const Footer = () => (
   </footer>
 );
  
-// Componente Principale App (immutato)
+// Componente Principale App (Gestisce e passa i ref)
 export default function App() {
   const servicesRef = useRef(null); 
 
