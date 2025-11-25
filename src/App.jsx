@@ -54,13 +54,6 @@ const ScrollPathSVG = () => {
           // La magia: pathLength disegna il percorso
           style={{ pathLength }}
         />
-        {/* Animazione "punta" scintillante (Opzionale: punto sulla scia) */}
-        {/* <motion.circle 
-          cx="50"
-          r="6"
-          fill="#FACC15"
-          style={{ cy: useTransform(pathLength, [0, 1], [0, 1000]) }}
-        /> */}
       </svg>
     </div>
   );
@@ -69,23 +62,13 @@ const ScrollPathSVG = () => {
  
 // Logo del brand
 const Logo = () => (
-  <a href="#" className="flex
-items-center gap-2 group cursor-pointer select-none z-50 relative">
-    <div className="relative w-10 h-10
-flex items-center justify-center bg-yellow-500/10 rounded-lg border
-border-yellow-500/20 group-hover:border-yellow-400/50
-transition-colors">
-      <Zap className="w-6 h-6
-text-yellow-400 fill-yellow-400/20 group-hover:fill-yellow-400 transition-all
-duration-300" />
+  <a href="#" className="flex items-center gap-2 group cursor-pointer select-none z-50 relative">
+    <div className="relative w-10 h-10 flex items-center justify-center bg-yellow-500/10 rounded-lg border border-yellow-500/20 group-hover:border-yellow-400/50 transition-colors">
+      <Zap className="w-6 h-6 text-yellow-400 fill-yellow-400/20 group-hover:fill-yellow-400 transition-all duration-300" />
     </div>
-    <div className="flex flex-col
-leading-none">
-      <span className="font-black
-text-xl text-white tracking-tighter">FLASH</span>
-      <span className="font-bold
-text-xs text-yellow-400 tracking-[0.2em]
-uppercase">Impianti</span>
+    <div className="flex flex-col leading-none">
+      <span className="font-black text-xl text-white tracking-tighter">FLASH</span>
+      <span className="font-bold text-xs text-yellow-400 tracking-[0.2em] uppercase">Impianti</span>
     </div>
   </a>
 );
@@ -97,21 +80,14 @@ const ElectricButton = ({ text, onClick }) => {
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
-      className="relative group px-8
-py-3 bg-yellow-400 text-slate-900 font-bold overflow-hidden rounded-lg
-shadow-xl shadow-yellow-400/30 transition-all"
+      className="relative group px-8 py-3 bg-yellow-400 text-slate-900 font-bold overflow-hidden rounded-lg shadow-xl shadow-yellow-400/30 transition-all"
     >
       {/* Effetto Shimmer/Zap su Hover */}
-      <div className="absolute top-0
-left-[-100%] w-1/2 h-full bg-gradient-to-r from-transparent via-white/70
-to-transparent skew-x-12 group-hover:animate-shimmer opacity-0
-group-hover:opacity-100" />
+      <div className="absolute top-0 left-[-100%] w-1/2 h-full bg-gradient-to-r from-transparent via-white/70 to-transparent skew-x-12 group-hover:animate-shimmer opacity-0 group-hover:opacity-100" />
  
-      <span className="relative z-10
-flex items-center gap-2 uppercase tracking-wider text-sm">
+      <span className="relative z-10 flex items-center gap-2 uppercase tracking-wider text-sm">
         {text}
-        <Zap className="w-4 h-4
-text-slate-900" />
+        <Zap className="w-4 h-4 text-slate-900" />
       </span>
     </motion.button>
   );
@@ -139,17 +115,13 @@ window.removeEventListener('scroll', handleScroll);
   ];
  
   return (
-    <nav className={`fixed w-full z-50
-transition-all duration-500 ${isScrolled ? 'py-3 bg-slate-950/95
-backdrop-blur-lg border-b border-white/5 shadow-2xl' : 'py-6
-bg-transparent'}`}>
-      <div className="container
-mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+    // RIGA CORRETTA: le classi sono ora su una singola linea logica per evitare errori di transpilazione.
+    <nav className={`fixed w-full z-50 transition-all duration-500 ${isScrolled ? 'py-3 bg-slate-950/95 backdrop-blur-lg border-b border-white/5 shadow-2xl' : 'py-6 bg-transparent'}`}>
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
         <Logo />
         
         {/* Navigazione Desktop */}
-        <div className="hidden
-md:flex items-center gap-8">
+        <div className="hidden md:flex items-center gap-8">
           {navLinks.map((link)
 => (
             <a
@@ -182,12 +154,9 @@ className="w-6 h-6" /> : <Menu className="w-6 h-6"
         animate={isOpen ? { opacity: 1,
 height: "auto" } : { opacity: 0, height: 0 }}
         transition={{ duration: 0.3 }}
-        className="md:hidden
-absolute top-full left-0 w-full bg-slate-900 border-b border-white/10 shadow-lg
-overflow-hidden"
+        className="md:hidden absolute top-full left-0 w-full bg-slate-900 border-b border-white/10 shadow-lg overflow-hidden"
       >
-        <div className="flex
-flex-col p-4 gap-4">
+        <div className="flex flex-col p-4 gap-4">
           {navLinks.map((link)
 => (
             <a
@@ -208,31 +177,18 @@ text="Preventivo Gratuito" onClick={() => setIsOpen(false)} />
 // Sezione Eroe (Hero)
 const Hero = () => {
   return (
-    <section className="relative
-min-h-screen flex flex-col pt-20 overflow-hidden bg-slate-950
-z-10">
-      <div className="absolute
-inset-0 z-0 overflow-hidden">
-        {/* Animazione di sfondo
-energetica */}
-        <div className="absolute
-top-[-20%] right-[-10%] w-[50vw] min-w-[300px] h-[50vw] min-h-[300px]
-bg-blue-600/10 rounded-full blur-[100px] animate-pulse" />
-        <div className="absolute
-bottom-[-10%] left-[-10%] w-[60vw] min-w-[300px] h-[60vw] min-h-[300px]
-bg-yellow-400/5 rounded-full blur-[80px] animate-none" />
-        <div className="absolute
-inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')]
-opacity-10" />
+    <section className="relative min-h-screen flex flex-col pt-20 overflow-hidden bg-slate-950 z-10">
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        {/* Animazione di sfondo energetica */}
+        <div className="absolute top-[-20%] right-[-10%] w-[50vw] min-w-[300px] h-[50vw] min-h-[300px] bg-blue-600/10 rounded-full blur-[100px] animate-pulse" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[60vw] min-w-[300px] h-[60vw] min-h-[300px] bg-yellow-400/5 rounded-full blur-[80px] animate-none" />
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10" />
       </div>
  
       {/* Contenuto Principale */}
-      <div className="container
-mx-auto px-4 sm:px-6 lg:px-8 relative z-10 grid lg:grid-cols-12 gap-12
-items-center flex-grow">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10 grid lg:grid-cols-12 gap-12 items-center flex-grow">
         <motion.div 
-          className="lg:col-span-7 pt-12
-lg:pt-0"
+          className="lg:col-span-7 pt-12 lg:pt-0"
           initial="hidden"
           animate="visible"
           variants={{
@@ -247,8 +203,7 @@ lg:pt-0"
             }
           }}
         >
-          {/* Tagline di Servizio
-*/}
+          {/* Tagline di Servizio */}
           <motion.div
 variants={textVariants} className="flex flex-wrap gap-3 mb-6">
             <ServiceTag
@@ -325,11 +280,10 @@ bg-yellow-400/30 rounded-full blur-xl" />
           </motion.div>
         </div>
       </div>
-
+ 
       {/* INTEGRAZIONE DEL NUOVO ELEMENTO DI SCROLL */}
       <div className="flex justify-center -mt-20 h-[50vh] relative">
-        <div className="w-[10px] h-full
-absolute left-1/2 -translate-x-1/2 top-0">
+        <div className="w-[10px] h-full absolute left-1/2 -translate-x-1/2 top-0">
           <ScrollPathSVG />
         </div>
       </div>
@@ -340,10 +294,7 @@ absolute left-1/2 -translate-x-1/2 top-0">
  
 // Componente per le Tagline di Servizio
 const ServiceTag = ({ text, icon: Icon }) => (
-    <div className={`inline-flex items-center
-gap-2 px-3 py-1 rounded-full bg-slate-800/50 border border-yellow-500/30
-text-slate-200 text-xs font-bold whitespace-nowrap uppercase
-tracking-wider`}>
+    <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/50 border border-yellow-500/30 text-slate-200 text-xs font-bold whitespace-nowrap uppercase tracking-wider`}>
         <Icon className="w-3 h-3
 text-yellow-400" />
         {text}
@@ -359,9 +310,7 @@ const ServiceCard = ({ icon: Icon, title, desc, delay })
       viewport={{ once: true, amount: 0.4 }}
       transition={{ duration: 0.6, delay:
 delay }}
-      className="bg-slate-900 border
-border-slate-800 rounded-xl p-8 shadow-xl hover:border-yellow-400/50
-transition-all duration-300 transform hover:-translate-y-1"
+      className="bg-slate-900 border border-slate-800 rounded-xl p-8 shadow-xl hover:border-yellow-400/50 transition-all duration-300 transform hover:-translate-y-1"
     >
       <div className="p-4 inline-flex
 rounded-full bg-yellow-400/10 text-yellow-400 mb-6">
@@ -449,8 +398,7 @@ const BenefitItem = ({ icon: Icon, title, desc, delay })
     whileInView={{ opacity: 1, x: 0 }}
     viewport={{ once: true, amount: 0.5 }}
     transition={{ duration: 0.7, delay: delay }}
-    className="flex items-start p-6
-bg-slate-900 rounded-xl border border-slate-800 shadow-lg"
+    className="flex items-start p-6 bg-slate-900 rounded-xl border border-slate-800 shadow-lg"
   >
     <div className="p-3 mr-4 rounded-full
 bg-yellow-400/10 text-yellow-400 flex-shrink-0">
@@ -487,13 +435,10 @@ sulle ultime tecnologie e protocolli di sicurezza." },
   return (
     <section id="vantaggi"
 className="py-24 bg-slate-900">
-      <div className="container
-mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid
-lg:grid-cols-2 gap-12 items-center">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
           
-          {/* Contenuto Testuale
-*/}
+          {/* Contenuto Testuale */}
           <div
 className="lg:pr-10">
             <p
@@ -512,8 +457,7 @@ informate che impattano positivamente sull'ambiente e sul tuo bilancio.
 text="Inizia la tua Trasformazione" />
           </div>
  
-          {/* Lista dei Vantaggi
-*/}
+          {/* Lista dei Vantaggi */}
           <div
 className="space-y-6">
             
@@ -554,8 +498,7 @@ document.getElementById('contact-message').classList.add('hidden');
   return (
     <section id="contatti"
 className="py-24 bg-slate-950 relative overflow-hidden">
-       <div className="container
-mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div
 className="max-w-4xl mx-auto text-center mb-12">
             <h2
@@ -575,8 +518,7 @@ opacity: 1, y: 0 }}
 true, amount: 0.3 }}
             transition={{
 duration: 0.7 }}
-            className="max-w-lg mx-auto p-8 bg-slate-900 rounded-xl border
-border-slate-800 shadow-2xl space-y-5" 
+            className="max-w-lg mx-auto p-8 bg-slate-900 rounded-xl border border-slate-800 shadow-2xl space-y-5" 
             onSubmit={handleSubmit}
           >
             <div
@@ -623,9 +565,7 @@ Mia Richiesta
 const Footer = () => (
   <footer className="bg-slate-950
 text-slate-500 py-10 border-t border-white/10">
-    <div className="container mx-auto px-4
-sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center
-gap-6">
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
       <div className="flex flex-col
 gap-2 items-center md:items-start">
         <Logo />
@@ -652,11 +592,10 @@ Servizio</a>
 // Componente Principale App
 export default function App() {
   return (
-    <div className="bg-slate-950
-min-h-screen font-sans text-slate-200 selection:bg-yellow-400
-selection:text-black overflow-x-hidden">
+    <div className="bg-slate-950 min-h-screen font-sans text-slate-200 selection:bg-yellow-400 selection:text-black overflow-x-hidden">
       
-      {/* Riferimento all'animazione Shimmer spostata in index.css */}
+      {/* Stile CSS inline per l'animazione (DEVE ESSERE IN INDEX.CSS) */}
+      {/* <style>{shimmerStyle}</style> Rimosso per best practice*/}
  
       <Navbar />
       <main>
