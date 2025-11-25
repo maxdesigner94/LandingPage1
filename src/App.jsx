@@ -246,7 +246,7 @@ export default function App() {
                 <div style={{ height: '5vh' }} className="bg-slate-950" /> {/* Spaziatore visivo */}
                 <Contact />
             </main>
-            {/* Footer omesso per brevità */}
+            <Footer />
         </div>
     );
 }
