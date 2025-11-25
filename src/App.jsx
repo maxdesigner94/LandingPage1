@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useLayoutEffect } from 'react';
 // Manteniamo motion per le animazioni UI (testo, card, hover)
 import { motion } from 'framer-motion'; 
 // Importazione GSAP (Assumendo siano installati)
@@ -22,12 +22,9 @@ const textVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.6 } },
 };
 
-// --- COMPONENTE: SVG che Traccia lo Scroll (AGGIORNATO per GSAP) ---
+// --- COMPONENTE: SVG che Traccia lo Scroll ---
 const ScrollPathSVG = React.forwardRef(({ pathD, pathRef }, ref) => {
   
-  // Il ref qui è per il PATH, non per il tracciamento dello scroll.
-  // pathRef è l'elemento <path> che GSAP animerà.
-
   return (
     <div className="absolute inset-0 z-10 pointer-events-none">
       <svg 
@@ -52,10 +49,9 @@ const ScrollPathSVG = React.forwardRef(({ pathD, pathRef }, ref) => {
 });
 
 ScrollPathSVG.displayName = 'ScrollPathSVG';
-// --- FINE ScrollPathSVG MODIFICATO ---
 
 // Logo e altri componenti (non modificati)
-const Logo = () => (/* ... */ <a href="#" className="flex items-center gap-2 group cursor-pointer select-none z-50 relative">
+const Logo = () => ( <a href="#" className="flex items-center gap-2 group cursor-pointer select-none z-50 relative">
 <div className="relative w-10 h-10 flex items-center justify-center bg-yellow-500/10 rounded-lg border border-yellow-500/20 group-hover:border-yellow-400/50 transition-colors">
   <Zap className="w-6 h-6 text-yellow-400 fill-yellow-400/20 group-hover:fill-yellow-400 transition-all duration-300" />
 </div>
@@ -64,7 +60,7 @@ const Logo = () => (/* ... */ <a href="#" className="flex items-center gap-2 gro
   <span className="font-bold text-xs text-yellow-400 tracking-[0.2em] uppercase">Impianti</span>
 </div>
 </a>);
-const ElectricButton = ({ text, onClick }) => (/* ... */
+const ElectricButton = ({ text, onClick }) => (
   <motion.button
     whileHover={{ scale: 1.05 }}
     whileTap={{ scale: 0.98 }}
@@ -83,7 +79,7 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
@@ -148,19 +144,19 @@ const Navbar = () => {
 };
 
 
-// Sezione Eroe (Hero - REIMPOSTATO con GSAP)
+// Sezione Eroe (Hero - AGGIORNATO con useLayoutEffect e ScrollTrigger.refresh)
 const Hero = ({ servicesRef }) => {
   const [startX, setStartX] = useState(null); 
   const [startY, setStartY] = useState(null); 
   const [pathHeight, setPathHeight] = useState('0px'); 
   const heroRef = useRef(null); 
   const imageRef = useRef(null); 
-  const pathRef = useRef(null); // Ref per l'elemento <path> SVG
-  const pathContainerRef = useRef(null); // Ref per il div container del SVG
+  const pathRef = useRef(null); 
 
-  // --- LOGICA GSAP + SCROLLTRIGGER ---
-  useEffect(() => {
-    // Calcolo iniziale della posizione e della lunghezza
+  // Usiamo useLayoutEffect per garantire la misurazione prima che il DOM sia disegnato
+  useLayoutEffect(() => {
+    
+    // Funzione di calcolo delle coordinate
     const calculatePosition = () => {
       if (!imageRef.current || !heroRef.current || !servicesRef.current) {
          setStartX(null);
@@ -172,16 +168,17 @@ const Hero = ({ servicesRef }) => {
       const imageRect = imageRef.current.getBoundingClientRect();
       const heroRect = heroRef.current.getBoundingClientRect();
       const servicesRect = servicesRef.current.getBoundingClientRect();
-      
-      // Calcolo Posizione Iniziale (Icona)
+
+      // Calcolo Posizione Iniziale (Centro X Icona e Bordo Inferiore Y Icona, relative a Hero)
       const centerAbsoluteX = imageRect.left + imageRect.width / 2;
       const centerRelativeXToHero = centerAbsoluteX - heroRect.left;
       const bottomRelativeYToHero = imageRect.bottom - heroRect.top;
       
-      // Calcolo Posizione Finale (Centro ServicesGrid)
+      // Calcolo Posizione Finale (Centro Y ServicesGrid, relativa a Hero)
       const servicesCenterAbsoluteY = servicesRect.top + servicesRect.height / 2;
       const endRelativeYToHero = servicesCenterAbsoluteY - heroRect.top;
 
+      // Altezza del path in pixel
       const newPathHeight = endRelativeYToHero - bottomRelativeYToHero;
         
       if (imageRect.width !== 0 && newPathHeight > 0) {
@@ -195,14 +192,25 @@ const Hero = ({ servicesRef }) => {
       }
     };
     
-    // Esegui il calcolo subito e al resize
-    calculatePosition();
-    window.addEventListener('resize', calculatePosition);
-    // Timeout per i casi in cui i componenti si caricano in ritardo
-    const timeout = setTimeout(calculatePosition, 300); 
+    // Handler che ricalcola la posizione e forza il refresh di GSAP
+    const refreshAndRecalc = () => {
+        calculatePosition();
+        // Essenziale per correggere il problema di desincronizzazione del layout
+        ScrollTrigger.refresh(); 
+    };
 
-    // --- LOGICA SCROLLTRIGGER (Si attiva dopo il calcolo) ---
+    // Primo calcolo
+    refreshAndRecalc();
+    
+    // Gestione Resize: ricalcola e aggiorna GSAP
+    window.addEventListener('resize', refreshAndRecalc);
+    
+    // Timeout di sicurezza: importante per attendere il caricamento di eventuali font/immagini asincroni
+    const timeout = setTimeout(refreshAndRecalc, 300); 
+
+    // --- LOGICA GSAP SCROLLTRIGGER ---
     let animation;
+    
     if (pathRef.current && heroRef.current && servicesRef.current) {
       const pathElement = pathRef.current;
       const pathLength = pathElement.getTotalLength();
@@ -215,45 +223,50 @@ const Hero = ({ servicesRef }) => {
 
       // 2. Crea l'animazione GSAP
       animation = gsap.to(pathElement, {
-        strokeDashoffset: 0, // Animazione completa
+        strokeDashoffset: 0,
         ease: "none",
         scrollTrigger: {
-          trigger: heroRef.current, // La Hero è il punto di partenza
-          endTrigger: servicesRef.current, // La ServicesGrid è il punto di fine
-          // Inizio: quando il fondo del viewport incontra il top della Hero (appena appare)
+          trigger: heroRef.current,
+          endTrigger: servicesRef.current, 
+          // Inizio: quando il fondo del viewport incontra il top della Hero
           start: "top bottom", 
           // Fine: quando il centro del viewport incontra il centro della ServicesGrid
           end: "center center", 
-          //markers: true, // DEBUG
-          scrub: true, // Collega l'animazione allo scroll
+          scrub: true,
         },
       });
     }
 
     return () => {
-      window.removeEventListener('resize', calculatePosition);
+      window.removeEventListener('resize', refreshAndRecalc);
       clearTimeout(timeout);
-      if (animation) animation.kill(); // Pulisci l'animazione GSAP
+      if (animation) animation.kill(); 
     };
-  }, [servicesRef, startX, startY]); // Dipendenze per ricalcolare la posizione e ricreare GSAP
+    // La dipendenza sui ref assicura che il setup GSAP sia ricreato se i ref sono nulli all'inizio
+  }, [servicesRef.current, imageRef.current]); 
 
-  // Stile dinamico per il container della scia (immutato)
+  // Stile dinamico per il container della scia
   const scrollPathContainerStyle = {
+    // Posizionamento orizzontale: centro dell'icona - 25px (metà della larghezza visiva della traccia)
     left: startX !== null ? `${startX - 25}px` : '50%', 
     top: startY !== null ? `${startY}px` : 'auto', 
     height: pathHeight, 
-    width: '100px', 
+    width: '100px', // Larghezza per contenere l'inclinazione
     transform: startX === null || startY === null ? 'translateX(-50%)' : 'none', 
   };
 
 
   return (
     <section ref={heroRef} className="relative min-h-screen flex flex-col pt-20 overflow-hidden bg-slate-950 z-10">
-      {/* ... (Contenuto Hero) ... */}
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        {/* Animazione di sfondo energetica */}
+        <div className="absolute top-[-20%] right-[-10%] w-[50vw] min-w-[300px] h-[50vw] min-h-[300px] bg-blue-600/10 rounded-full blur-[100px] animate-pulse" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[60vw] min-w-[300px] h-[60vw] min-h-[300px] bg-yellow-400/5 rounded-full blur-[80px] animate-none" />
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10" />
+      </div>
 
       {/* Contenuto Principale */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10 grid lg:grid-cols-12 gap-12 items-center flex-grow">
-        {/* Testo animato con framer-motion */}
         <motion.div 
           className="lg:col-span-7 pt-12 lg:pt-0"
           initial="hidden"
@@ -325,13 +338,12 @@ via-yellow-200 to-white">
 
       {/* INTEGRAZIONE DELLA SCIA - GSAP usa pathRef per animare */}
       <div 
-        ref={pathContainerRef}
         className="absolute z-20 pointer-events-none overflow-hidden" 
         style={scrollPathContainerStyle}
       >
         <ScrollPathSVG 
           pathRef={pathRef} 
-          pathD="M 50 0 L 150 1000" // Percorso inclinato (in ViewBox)
+          pathD="M 50 0 L 150 1000" // Percorso inclinato
         /> 
       </div>
       
@@ -339,7 +351,7 @@ via-yellow-200 to-white">
   );
 };
  
-// Componente ServiceTag (non modificato)
+// Componente per le Tagline di Servizio
 const ServiceTag = ({ text, icon: Icon }) => (
     <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/50 border border-yellow-500/30 text-slate-200 text-xs font-bold whitespace-nowrap uppercase tracking-wider`}>
         <Icon className="w-3 h-3 text-yellow-400" />
@@ -347,7 +359,7 @@ const ServiceTag = ({ text, icon: Icon }) => (
     </div>
 );
  
-// Componente Card del Servizio (non modificato)
+// Componente Card del Servizio
 const ServiceCard = ({ icon: Icon, title, desc, delay }) => (
     <motion.div
       initial={{ opacity: 0, y: 50 }}
@@ -370,7 +382,7 @@ hover:text-white transition-colors">
     </motion.div>
 );
  
-// Sezione Servizi (Grid Layout - REINSERITO forwardRef)
+// Sezione Servizi (Grid Layout - con forwardRef)
 const ServicesGrid = React.forwardRef((props, ref) => {
     const services = [
       { icon: Home, title: "Impianti Residenziali", desc: "Sistemi domotici intelligenti, gestione carichi e quadri elettrici a norma per la massima sicurezza e comfort in casa." },
@@ -402,7 +414,7 @@ const ServicesGrid = React.forwardRef((props, ref) => {
 });
 ServicesGrid.displayName = 'ServicesGrid';
  
-// Componenti Benefits, Contact, Footer (non modificati)
+// Componenti Benefits, Contact, Footer (omessi per brevità ma immutati)
 const BenefitItem = ({ icon: Icon, title, desc, delay }) => (
   <motion.div
     initial={{ opacity: 0, x: -50 }}
@@ -525,7 +537,7 @@ const Footer = () => (
   </footer>
 );
  
-// Componente Principale App (MODIFICATO per gestire e passare i ref)
+// Componente Principale App (immutato)
 export default function App() {
   const servicesRef = useRef(null); 
 
