@@ -151,81 +151,105 @@ const Navbar = () => {
   );
 };
 
-// Sezione Eroe (Hero - REVISIONATO TOTALMENTE per GSAP)
+// Sezione Eroe (Hero - LOGICA DI TRACCIAMENTO PRECISA)
 const Hero = ({ servicesRef }) => {
   const [startX, setStartX] = useState(null); 
   const [startY, setStartY] = useState(null); 
+  const [pathHeight, setPathHeight] = useState('0px'); // Altezza dinamica del div
+  
   const heroRef = useRef(null); 
-  const imageRef = useRef(null); 
-  const pathRef = useRef(null); 
+  const imageRef = useRef(null); // Ref dell'icona di partenza
+  const pathRef = useRef(null); // Ref del path SVG
 
-  // Usiamo useLayoutEffect per garantire la misurazione prima che il browser disegni
+  // UseLayoutEffect per misurare il DOM prima del disegno
   useLayoutEffect(() => {
     
-    // Funzione di calcolo delle coordinate di PARTENZA (Icona)
+    let animation;
+
+    // Funzione di calcolo delle coordinate e delle altezze
     const calculatePosition = () => {
-      if (!imageRef.current || !heroRef.current) {
+      if (!imageRef.current || !heroRef.current || !servicesRef.current) {
          setStartX(null);
          setStartY(null);
+         setPathHeight('0px');
          return;
       }
 
       const imageRect = imageRef.current.getBoundingClientRect();
       const heroRect = heroRef.current.getBoundingClientRect();
+      const servicesRect = servicesRef.current.getBoundingClientRect();
 
-      // Calcolo Posizione Iniziale (Centro X Icona e Bordo Inferiore Y Icona, relative a Hero)
+      // 1. Posizione Assoluta Y di Partenza (Bordo inferiore Icona)
+      const startAbsoluteY = imageRect.bottom + window.scrollY; 
+      
+      // 2. Posizione Assoluta Y di Arrivo (Centro ServicesGrid)
+      const servicesCenterAbsoluteY = servicesRect.top + servicesRect.height / 2 + window.scrollY;
+
+      // 3. Altezza necessaria per il div Path Container (distanza in pixel)
+      const newPathHeight = servicesCenterAbsoluteY - startAbsoluteY;
+      
+      // 4. Posizione Iniziale Y del div Path Container (relativa a Hero)
+      const startRelativeYToHero = startAbsoluteY - (heroRect.top + window.scrollY);
+      
+      // 5. Posizione Iniziale X del div Path Container
       const centerAbsoluteX = imageRect.left + imageRect.width / 2;
       const centerRelativeXToHero = centerAbsoluteX - heroRect.left;
-      const bottomRelativeYToHero = imageRect.bottom - heroRect.top;
         
-      if (imageRect.width !== 0) {
+      if (imageRect.width !== 0 && newPathHeight > 0) {
         setStartX(centerRelativeXToHero);
-        setStartY(bottomRelativeYToHero);
+        setStartY(startRelativeYToHero);
+        setPathHeight(`${newPathHeight}px`);
       } else {
         setStartX(null);
         setStartY(null);
+        setPathHeight('0px');
       }
+      
+      // CRITICAL: Ricalcola tutti i trigger dopo aver aggiornato le altezze del DOM
+      ScrollTrigger.refresh(); 
     };
     
-    // Handler che ricalcola la posizione e forza il refresh di GSAP
+    // Handler che ricalcola al resize e force il refresh
     const refreshAndRecalc = () => {
         calculatePosition();
-        // Essenziale per correggere il problema di desincronizzazione del layout
-        ScrollTrigger.refresh(); 
     };
 
-    // Primo calcolo
+    // Primo calcolo (immediato)
     refreshAndRecalc();
     
-    // Gestione Resize e timeout di sicurezza
+    // Gestione Resize e timeout di sicurezza (per layout asincroni)
     window.addEventListener('resize', refreshAndRecalc);
     const timeout = setTimeout(refreshAndRecalc, 300); 
 
     // --- LOGICA GSAP SCROLLTRIGGER ---
-    let animation;
-    
-    if (pathRef.current && heroRef.current && servicesRef.current) {
+    if (pathRef.current && imageRef.current && servicesRef.current) {
       const pathElement = pathRef.current;
       const pathLength = pathElement.getTotalLength();
 
-      // 1. Imposta lo stato iniziale (linea invisibile)
+      // Imposta lo stato iniziale (linea invisibile)
       gsap.set(pathElement, {
         strokeDasharray: pathLength,
         strokeDashoffset: pathLength,
       });
 
-      // 2. Crea l'animazione GSAP
+      // Crea l'animazione GSAP
       animation = gsap.to(pathElement, {
         strokeDashoffset: 0,
         ease: "none",
         scrollTrigger: {
-          trigger: heroRef.current,
+          // TRIGGER PRIMARIO: L'icona è il punto di partenza
+          trigger: imageRef.current, 
+          // END TRIGGER: La sezione servizi è il punto di arrivo
           endTrigger: servicesRef.current, 
-          // INIZIO: Quando l'utente inizia a scrollare dalla cima
-          start: "top top", 
-          // FINE: Quando il centro della ServicesGrid incontra il centro del viewport
+
+          // START: Quando il *fondo* del trigger (icona) incontra il *top* del viewport
+          start: "bottom top", 
+          
+          // END: Quando il *centro* del servicesRef incontra il *centro* del viewport
           end: "center center", 
+          
           scrub: true,
+          // marker: true, // DECOMMENTA PER DEBUG
         },
       });
     }
@@ -235,14 +259,14 @@ const Hero = ({ servicesRef }) => {
       clearTimeout(timeout);
       if (animation) animation.kill(); 
     };
-    
+    // La dipendenza sui ref assicura che il setup GSAP sia ricreato quando i ref sono disponibili
   }, [servicesRef.current, imageRef.current]); 
 
-  // Stile dinamico per il contenitore della scia: esteso per catturare l'animazione
+  // Stile dinamico per il contenitore della scia
   const scrollPathContainerStyle = {
     left: startX !== null ? `${startX - 25}px` : '50%', 
     top: startY !== null ? `${startY}px` : 'auto', 
-    height: '200vh', // Estendi il contenitore oltre lo schermo
+    height: pathHeight, 
     width: '100px', 
     transform: startX === null || startY === null ? 'translateX(-50%)' : 'none', 
   };
@@ -309,7 +333,7 @@ via-yellow-200 to-white">
           </motion.div>
         </motion.div>
         
-        {/* Icona 3D Impianto */}
+        {/* Icona 3D Impianto (Elemento di PARTENZA) */}
         <div
           className="lg:col-span-5 relative hidden lg:flex items-center justify-center h-full min-h-[400px]"
         >
@@ -328,7 +352,7 @@ via-yellow-200 to-white">
         </div>
       </div>
 
-      {/* INTEGRAZIONE DELLA SCIA - GSAP gestisce l'arrivo */}
+      {/* INTEGRAZIONE DELLA SCIA - Altezza dinamica */}
       <div 
         className="absolute z-20 pointer-events-none overflow-hidden" 
         style={scrollPathContainerStyle}
@@ -374,7 +398,7 @@ hover:text-white transition-colors">
     </motion.div>
 );
  
-// Sezione Servizi (Grid Layout - con forwardRef)
+// Sezione Servizi (Grid Layout - Punto di Arrivo)
 const ServicesGrid = React.forwardRef((props, ref) => {
     const services = [
       { icon: Home, title: "Impianti Residenziali", desc: "Sistemi domotici intelligenti, gestione carichi e quadri elettrici a norma per la massima sicurezza e comfort in casa." },
