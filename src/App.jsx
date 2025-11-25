@@ -12,7 +12,7 @@ const textVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.6 } },
 };
 
-// --- COMPONENTE: SVG che Traccia lo Scroll (CORRETTO e INCLINATO) ---
+// --- COMPONENTE: SVG che Traccia lo Scroll ---
 const ScrollPathSVG = React.forwardRef(({ heightInViewBox = "1000", widthInViewBox = "200" }, ref) => {
   
   // Traccia lo scroll sull'elemento referenziato (passato da HeroRef)
@@ -29,8 +29,7 @@ const ScrollPathSVG = React.forwardRef(({ heightInViewBox = "1000", widthInViewB
   });
 
   // Path per un'inclinazione:
-  // Parte da X=50 e finisce a X=150. (Spostamento orizzontale di 100 su 1000 verticale)
-  // Questo crea un'inclinazione visiva di circa 45 gradi nel container da 100px.
+  // Parte da X=50 e finisce a X=150.
   const pathD = `M 50 0 L 150 ${heightInViewBox}`; 
 
   return (
@@ -57,7 +56,6 @@ const ScrollPathSVG = React.forwardRef(({ heightInViewBox = "1000", widthInViewB
 });
 
 ScrollPathSVG.displayName = 'ScrollPathSVG';
-// --- FINE ScrollPathSVG MODIFICATO ---
 
 // Logo del brand
 const Logo = () => (
@@ -164,41 +162,51 @@ const Navbar = () => {
   );
 };
 
-// Sezione Eroe (Hero)
-const Hero = () => {
+// Sezione Eroe (Hero - MODIFICATO per accettare servicesRef)
+const Hero = ({ servicesRef }) => {
   const [startX, setStartX] = useState(null); 
   const [startY, setStartY] = useState(null); 
-  const [pathHeight, setPathHeight] = useState('50vh'); // Altezza dinamica per la scia
+  // pathHeight deve contenere la distanza in pixel dalla fine dell'icona al centro dei servizi
+  const [pathHeight, setPathHeight] = useState('0px'); 
   const heroRef = useRef(null); 
-  const imageRef = useRef(null); // Ref per l'icona BatteryCharging
+  const imageRef = useRef(null); 
 
   useEffect(() => {
     const calculatePosition = () => {
-      if (imageRef.current && heroRef.current) {
-        const imageRect = imageRef.current.getBoundingClientRect();
-        const heroRect = heroRef.current.getBoundingClientRect();
+      // Calcolo Posizione Iniziale (Icona)
+      if (!imageRef.current || !heroRef.current || !servicesRef.current) {
+         // Se i ref non sono ancora pronti, usciamo
+         setStartX(null);
+         setStartY(null);
+         setPathHeight('0px');
+         return;
+      }
 
-        // X: centro dell'immagine rispetto al bordo sinistro della sezione Hero
-        const centerAbsoluteX = imageRect.left + imageRect.width / 2;
-        const centerRelativeXToHero = centerAbsoluteX - heroRect.left;
+      const imageRect = imageRef.current.getBoundingClientRect();
+      const heroRect = heroRef.current.getBoundingClientRect();
+      const servicesRect = servicesRef.current.getBoundingClientRect();
+
+      const centerAbsoluteX = imageRect.left + imageRect.width / 2;
+      const centerRelativeXToHero = centerAbsoluteX - heroRect.left;
+      
+      const bottomRelativeYToHero = imageRect.bottom - heroRect.top;
+      
+      // Calcolo Posizione Finale (Centro ServicesGrid)
+      // Calcola il centro verticale della sezione Servizi rispetto al top della Hero
+      const servicesCenterAbsoluteY = servicesRect.top + servicesRect.height / 2;
+      const endRelativeYToHero = servicesCenterAbsoluteY - heroRect.top;
+
+      // Nuova altezza: dalla fine dell'icona al centro della sezione Servizi
+      const newPathHeight = endRelativeYToHero - bottomRelativeYToHero;
         
-        // Y: bordo inferiore dell'immagine rispetto al top della sezione Hero
-        const bottomRelativeYToHero = imageRect.bottom - heroRect.top;
-        
-        if (imageRect.width === 0) {
-            setStartX(null);
-            setStartY(null);
-            setPathHeight('50vh');
-        } else {
-            setStartX(centerRelativeXToHero);
-            setStartY(bottomRelativeYToHero);
-            // Calcola l'altezza rimanente della sezione Hero dopo il punto di partenza della scia
-            setPathHeight(`${heroRect.height - bottomRelativeYToHero}px`);
-        }
+      if (imageRect.width !== 0 && newPathHeight > 0) {
+        setStartX(centerRelativeXToHero);
+        setStartY(bottomRelativeYToHero);
+        setPathHeight(`${newPathHeight}px`);
       } else {
         setStartX(null);
         setStartY(null);
-        setPathHeight('50vh');
+        setPathHeight('0px');
       }
     };
 
@@ -211,23 +219,20 @@ const Hero = () => {
       window.removeEventListener('resize', calculatePosition);
       clearTimeout(timeout);
     };
-  }, []);
+  }, [servicesRef]); // Aggiunto servicesRef come dipendenza per ricalcolare quando mounta
 
-  // Stile dinamico per il container della scia
+  // Stile dinamico per il container della scia (immutato)
   const scrollPathContainerStyle = {
-    // Il path SVG ha viewBox 200x1000 e parte da x=50 (25% della larghezza).
-    // Dando al container una larghezza di 100px, l'offset di partenza è 25px.
-    // Posizioniamo il container in modo che il punto di partenza (25px) sia allineato a startX.
+    // Allinea il punto di partenza (x=50 nella viewBox 200) con il centro dell'icona
     left: startX !== null ? `${startX - 25}px` : '50%', 
     top: startY !== null ? `${startY}px` : 'auto', 
     height: pathHeight, 
-    width: '100px', // Larghezza per contenere l'inclinazione (ViewBox 200x1000 -> 100px di inclinazione visiva)
+    width: '100px', 
     transform: startX === null || startY === null ? 'translateX(-50%)' : 'none', 
   };
 
 
   return (
-    // Assegna heroRef a tutta la sezione per il tracciamento dello scroll
     <section ref={heroRef} className="relative min-h-screen flex flex-col pt-20 overflow-hidden bg-slate-950 z-10">
       <div className="absolute inset-0 z-0 overflow-hidden">
         {/* Animazione di sfondo energetica */}
@@ -236,7 +241,7 @@ const Hero = () => {
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10" />
       </div>
 
-      {/* Contenuto Principale (Riapparso e Corretto) */}
+      {/* Contenuto Principale */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10 grid lg:grid-cols-12 gap-12 items-center flex-grow">
         <motion.div 
           className="lg:col-span-7 pt-12 lg:pt-0"
@@ -251,7 +256,6 @@ const Hero = () => {
             }
           }}
         >
-          {/* Tagline di Servizio */}
           <motion.div variants={textVariants} className="flex flex-wrap gap-3 mb-6">
             <ServiceTag text="PRONTO INTERVENTO H24" icon={Clock} />
             <ServiceTag text="CERTIFICAZIONE GARANTITA" icon={CheckCircle2} />
@@ -314,6 +318,7 @@ via-yellow-200 to-white">
         className="absolute z-20 pointer-events-none overflow-hidden" 
         style={scrollPathContainerStyle}
       >
+        {/* Passiamo heroRef alla ScrollPathSVG per tracciare lo scroll della Hero */}
         <ScrollPathSVG ref={heroRef} heightInViewBox={1000} widthInViewBox={200} /> 
       </div>
       
@@ -352,8 +357,8 @@ hover:text-white transition-colors">
     </motion.div>
 );
  
-// Sezione Servizi (Grid Layout)
-const ServicesGrid = () => {
+// Sezione Servizi (Grid Layout - MODIFICATO con forwardRef)
+const ServicesGrid = React.forwardRef((props, ref) => {
     const services = [
       { icon: Home, title: "Impianti Residenziali", desc: "Sistemi domotici intelligenti, gestione carichi e quadri elettrici a norma per la massima sicurezza e comfort in casa." },
       { icon: Factory, title: "Settore Industriale", desc: "Cabine di trasformazione, power center, automazione industriale e manutenzione predittiva per la continuità operativa." },
@@ -364,7 +369,8 @@ const ServicesGrid = () => {
     ];
  
     return (
-      <section id="servizi" className="py-24 bg-slate-950">
+      // Assegna il ref qui
+      <section ref={ref} id="servizi" className="py-24 bg-slate-950">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
               {/* Titolo Sezione */}
               <div className="text-center max-w-4xl mx-auto mb-16">
@@ -381,7 +387,8 @@ const ServicesGrid = () => {
           </div>
       </section>
     );
-};
+});
+ServicesGrid.displayName = 'ServicesGrid';
  
 // Componente Vantaggio con animazione
 const BenefitItem = ({ icon: Icon, title, desc, delay }) => (
@@ -516,15 +523,20 @@ const Footer = () => (
   </footer>
 );
  
-// Componente Principale App
+// Componente Principale App (MODIFICATO per gestire e passare i ref)
 export default function App() {
+  // 1. Definisci il Ref per la sezione Servizi
+  const servicesRef = useRef(null); 
+
   return (
     <div className="bg-slate-950 min-h-screen font-sans text-slate-200 selection:bg-yellow-400 selection:text-black overflow-x-hidden">
       
       <Navbar />
       <main>
-        <Hero />
-        <ServicesGrid />
+        {/* 2. Passa il ref a Hero (per calcolare la fine) */}
+        <Hero servicesRef={servicesRef} />
+        {/* 3. Passa il ref a ServicesGrid (per misurare la posizione) */}
+        <ServicesGrid ref={servicesRef} />
         <Benefits />
         <Contact />
       </main>
