@@ -1,13 +1,15 @@
-/* Direttive per Tailwind CSS */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Importiamo il font Inter da Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+/* * Keyframe CSS per l'effetto Shimmer nel pulsante (ElectricButton).
+ * Spostato qui da App.jsx per best practice.
+ */
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
 
-body {
-    font-family: 'Inter', sans-serif;
-    /* Utile per rimuovere lo scroll orizzontale non voluto su mobile */
-    overflow-x: hidden; 
+.group:hover .group-hover\:animate-shimmer {
+  animation: shimmer 1.5s infinite;
 }
