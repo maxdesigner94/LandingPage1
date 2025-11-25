@@ -5,13 +5,13 @@ import {
   BatteryCharging, Menu, X, Lightbulb, CheckCircle2, ChevronRight,
   ClipboardCheck, HardHat, Clock, Layers, TrendingUp
 } from 'lucide-react';
- 
+
 // Varianti di animazione per il testo
 const textVariants = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.6 } },
 };
- 
+
 // --- NUOVO COMPONENTE: SVG che Traccia lo Scroll ---
 const ScrollPathSVG = () => {
   const ref = useRef(null);
@@ -21,14 +21,14 @@ const ScrollPathSVG = () => {
     target: ref,
     offset: ["start end", "end start"]
   });
- 
+
   // Usa useSpring per ammorbidire l'animazione del tracciato
   const pathLength = useSpring(scrollYProgress, {
     stiffness: 100,
     damping: 30,
     restDelta: 0.001
   });
- 
+
   return (
     <div ref={ref} className="absolute inset-0 z-10 pointer-events-none">
       <svg 
@@ -46,7 +46,6 @@ const ScrollPathSVG = () => {
           strokeWidth="4"
           strokeLinecap="round"
           opacity="0.3"
-          // La magia: pathLength disegna il percorso
           style={{ pathLength }}
         />
       </svg>
@@ -54,7 +53,7 @@ const ScrollPathSVG = () => {
   );
 };
 // --- FINE NUOVO COMPONENTE ---
- 
+
 // Logo del brand
 const Logo = () => (
   <a href="#" className="flex items-center gap-2 group cursor-pointer select-none z-50 relative">
@@ -67,7 +66,7 @@ const Logo = () => (
     </div>
   </a>
 );
- 
+
 // Bottone Elettrico (CTA principale)
 const ElectricButton = ({ text, onClick }) => {
   return (
@@ -79,7 +78,7 @@ const ElectricButton = ({ text, onClick }) => {
     >
       {/* Effetto Shimmer/Zap su Hover */}
       <div className="absolute top-0 left-[-100%] w-1/2 h-full bg-gradient-to-r from-transparent via-white/70 to-transparent skew-x-12 group-hover:animate-shimmer opacity-0 group-hover:opacity-100" />
- 
+
       <span className="relative z-10 flex items-center gap-2 uppercase tracking-wider text-sm">
         {text}
         <Zap className="w-4 h-4 text-slate-900" />
@@ -87,34 +86,35 @@ const ElectricButton = ({ text, onClick }) => {
     </motion.button>
   );
 };
- 
+
 // Barra di Navigazione Fissa e Responsiva
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
- 
+
   useEffect(() => {
     // Gestione dello scrolling
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
- 
+
   const navLinks = [
     { name: 'Servizi', href: '#servizi' },
     { name: 'Vantaggi', href: '#vantaggi' },
     { name: 'Contatti', href: '#contatti' },
   ];
- 
+
   return (
-    // Classi su linea singola per evitare errori
+    // CORREZIONE: Classi su linea singola per evitare errori di transpilazione.
     <nav className={`fixed w-full z-50 transition-all duration-500 ${isScrolled ? 'py-3 bg-slate-950/95 backdrop-blur-lg border-b border-white/5 shadow-2xl' : 'py-6 bg-transparent'}`}>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
         <Logo />
         
         {/* Navigazione Desktop */}
         <div className="hidden md:flex items-center gap-8">
-          {navLinks.map((link) => ( {/* CORREZIONE QUI */}
+          {/* CORREZIONE: map function su linea unica per evitare l'errore 'Unexpected newline before "=>"' */}
+          {navLinks.map((link) => (
             <a
               key={link.name} 
               href={link.href} 
@@ -126,7 +126,7 @@ const Navbar = () => {
           ))}
           <ElectricButton text="Preventivo Gratuito" />
         </div>
- 
+
         {/* Toggle Mobile */}
         <button
           className="md:hidden text-white p-2 focus:outline-none" 
@@ -136,7 +136,7 @@ const Navbar = () => {
           {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
       </div>
- 
+
       {/* Menu Mobile */}
       <motion.div 
         initial={{ opacity: 0, height: 0 }}
@@ -145,7 +145,8 @@ const Navbar = () => {
         className="md:hidden absolute top-full left-0 w-full bg-slate-900 border-b border-white/10 shadow-lg overflow-hidden"
       >
         <div className="flex flex-col p-4 gap-4">
-          {navLinks.map((link) => ( {/* CORREZIONE QUI */}
+          {/* CORREZIONE: map function su linea unica per evitare l'errore 'Unexpected newline before "=>"' */}
+          {navLinks.map((link) => (
             <a
               key={link.name} 
               href={link.href} 
@@ -161,7 +162,7 @@ const Navbar = () => {
     </nav>
   );
 };
- 
+
 // Sezione Eroe (Hero)
 const Hero = () => {
   return (
@@ -172,7 +173,7 @@ const Hero = () => {
         <div className="absolute bottom-[-10%] left-[-10%] w-[60vw] min-w-[300px] h-[60vw] min-h-[300px] bg-yellow-400/5 rounded-full blur-[80px] animate-none" />
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10" />
       </div>
- 
+
       {/* Contenuto Principale */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10 grid lg:grid-cols-12 gap-12 items-center flex-grow">
         <motion.div 
@@ -243,7 +244,7 @@ className="lg:col-span-5 relative hidden lg:flex items-center justify-center h-f
           </motion.div>
         </div>
       </div>
- 
+
       {/* INTEGRAZIONE DEL NUOVO ELEMENTO DI SCROLL */}
       <div className="flex justify-center -mt-20 h-[50vh] relative">
         <div className="w-[10px] h-full absolute left-1/2 -translate-x-1/2 top-0">
@@ -254,7 +255,7 @@ className="lg:col-span-5 relative hidden lg:flex items-center justify-center h-f
     </section>
   );
 };
- 
+
 // Componente per le Tagline di Servizio
 const ServiceTag = ({ text, icon: Icon }) => (
     <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/50 border border-yellow-500/30 text-slate-200 text-xs font-bold whitespace-nowrap uppercase tracking-wider`}>
@@ -262,7 +263,7 @@ const ServiceTag = ({ text, icon: Icon }) => (
         {text}
     </div>
 );
- 
+
 // Componente Card del Servizio
 const ServiceCard = ({ icon: Icon, title, desc, delay }) => (
     <motion.div
@@ -285,7 +286,7 @@ hover:text-white transition-colors">
       </a>
     </motion.div>
 );
- 
+
 // Sezione Servizi (Grid Layout)
 const ServicesGrid = () => {
     const services = [
@@ -296,7 +297,7 @@ const ServicesGrid = () => {
       { icon: Lightbulb, title: "Illuminazione LED", desc: "Soluzioni di illuminazione ad alta efficienza e design, incluse l'illuminazione pubblica e industriale." },
       { icon: Cpu, title: "Automazione Domotica", desc: "Integrazione completa di riscaldamento, clima, sicurezza e multimedia in un unico sistema gestibile da remoto." },
     ];
- 
+
     return (
       <section id="servizi" className="py-24 bg-slate-950">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -305,10 +306,11 @@ const ServicesGrid = () => {
                   <p className="text-yellow-400 uppercase font-bold text-sm mb-2">I Nostri Servizi Core</p>
                   <h2 className="text-4xl md:text-5xl font-bold text-white">Tecnologia, Sicurezza, Efficienza.</h2>
               </div>
- 
+
               {/* Griglia di Card */}
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {services.map((service, index) => ( {/* CORREZIONE QUI */}
+                  {/* CORREZIONE: map function su linea unica */}
+                  {services.map((service, index) => (
                       <ServiceCard key={index} {...service} delay={index * 0.15} />
                   ))}
               </div>
@@ -316,7 +318,7 @@ const ServicesGrid = () => {
       </section>
     );
 };
- 
+
 // Componente Vantaggio con animazione
 const BenefitItem = ({ icon: Icon, title, desc, delay }) => (
   <motion.div
@@ -336,7 +338,7 @@ bg-yellow-400/10 text-yellow-400 flex-shrink-0">
     </div>
   </motion.div>
 );
- 
+
 // Sezione Vantaggi (Perché Sceglierci)
 const Benefits = () => {
   const benefits = [
@@ -345,7 +347,7 @@ const Benefits = () => {
     { icon: Layers, title: "Soluzioni Chiavi in Mano", desc: "Dalla progettazione alla messa in opera, gestiamo ogni fase del tuo progetto senza stress per te." },
     { icon: HardHat, title: "Team Qualificato", desc: "I nostri tecnici sono costantemente aggiornati sulle ultime tecnologie e protocolli di sicurezza." },
   ];
- 
+
   return (
     <section id="vantaggi" className="py-24 bg-slate-900">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -360,10 +362,11 @@ const Benefits = () => {
             </p>
             <ElectricButton text="Inizia la tua Trasformazione" />
           </div>
- 
+
           {/* Lista dei Vantaggi */}
           <div className="space-y-6">
-            {benefits.map((benefit, index) => ( {/* CORREZIONE QUI */}
+            {/* CORREZIONE: map function su linea unica */}
+            {benefits.map((benefit, index) => (
               <BenefitItem key={index} {...benefit} delay={index * 0.1} />
             ))}
           </div>
@@ -372,8 +375,8 @@ const Benefits = () => {
     </section>
   );
 };
- 
- 
+
+
 // Sezione Contatti con Form
 const Contact = () => {
   // Funzione fittizia per la sottomissione
@@ -388,7 +391,7 @@ const Contact = () => {
         document.getElementById('contact-message').classList.add('hidden');
     }, 4000);
   };
- 
+
   return (
     <section id="contatti" className="py-24 bg-slate-950 relative overflow-hidden">
        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -434,7 +437,7 @@ const Contact = () => {
     </section>
   );
 };
- 
+
 // Footer (Piè di Pagina)
 const Footer = () => (
   <footer className="bg-slate-950 text-slate-500 py-10 border-t border-white/10">
@@ -451,7 +454,7 @@ const Footer = () => (
     </div>
   </footer>
 );
- 
+
 // Componente Principale App
 export default function App() {
   return (
