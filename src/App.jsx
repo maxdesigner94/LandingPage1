@@ -6,19 +6,13 @@ import {
   ClipboardCheck, HardHat, Clock, Layers, TrendingUp
 } from 'lucide-react';
 
-// Stile personalizzato per l'animazione shimmer
-// Nota: questa animazione CSS deve essere definita globalmente,
-// ma per l'obiettivo di un singolo file, la manterremo implicita
-// assumendo l'uso di Tailwind CSS e un setup React moderno.
-// Per un funzionamento garantito nel browser, gli stili dovrebbero essere in un file CSS o in un blocco <style> in HTML.
-
 // Varianti di animazione per il testo
 const textVariants = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.6 } },
 };
 
-// --- COMPONENTI ---
+// --- COMPONENTI (Invariati: Logo, ElectricButton, Navbar, Hero, ServiceTag) ---
 
 // Logo del brand
 const Logo = () => (
@@ -164,7 +158,7 @@ const Hero = () => {
           <motion.div variants={textVariants} className="flex flex-wrap gap-4 items-center">
             <ElectricButton text="Richiedi Sopralluogo" />
             <a href="#servizi" className="px-6 py-3 group flex items-center gap-2 font-semibold text-white border-2 border-transparent hover:border-yellow-400/50 rounded-lg transition-colors">
-                Scopri di più
+                Scopri i Servizi
                 <ChevronRight className="w-5 h-5 text-yellow-400 group-hover:text-white group-hover:translate-x-1 transition-transform" />
             </a>
           </motion.div>
@@ -179,11 +173,11 @@ const Hero = () => {
                  transition={{ duration: 1, delay: 0.5, type: "spring", stiffness: 50 }}
                  className="relative w-80 h-80 flex items-center justify-center bg-slate-900 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.5)] border border-white/10"
              >
-               <BatteryCharging className="w-40 h-40 text-yellow-400 opacity-20 relative z-10" />
-               <Zap className="w-20 h-20 text-yellow-400 absolute drop-shadow-[0_0_20px_rgba(250,204,21,0.8)] z-20" />
-               {/* Dettagli in background */}
-               <div className="absolute -top-4 -right-4 w-12 h-12 bg-blue-600/30 rounded-full blur-xl" />
-               <div className="absolute bottom-4 left-4 w-10 h-10 bg-yellow-400/30 rounded-full blur-xl" />
+              <BatteryCharging className="w-40 h-40 text-yellow-400 opacity-20 relative z-10" />
+              <Zap className="w-20 h-20 text-yellow-400 absolute drop-shadow-[0_0_20px_rgba(250,204,21,0.8)] z-20" />
+              {/* Dettagli in background */}
+              <div className="absolute -top-4 -right-4 w-12 h-12 bg-blue-600/30 rounded-full blur-xl" />
+              <div className="absolute bottom-4 left-4 w-10 h-10 bg-yellow-400/30 rounded-full blur-xl" />
              </motion.div>
            </div>
         </div>
@@ -200,35 +194,74 @@ const ServiceTag = ({ text, icon: Icon }) => (
     </div>
 );
 
-// Componente Card del Servizio
-const ServiceCard = ({ icon: Icon, title, desc, delay }) => (
+// --- NUOVO COMPONENTE PER IL LAYOUT ZIGZAG ---
+const ServiceZigZagItem = ({ icon: Icon, title, desc, reverse, delay }) => (
     <motion.div
       initial={{ opacity: 0, y: 50 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.4 }}
-      transition={{ duration: 0.6, delay: delay }}
-      className="bg-slate-900 border border-slate-800 rounded-xl p-8 shadow-xl hover:border-yellow-400/50 transition-all duration-300 transform hover:-translate-y-1"
+      transition={{ duration: 0.7, delay: delay }}
+      className={`grid md:grid-cols-2 gap-12 items-center py-10 border-b border-white/5 last:border-b-0`}
     >
-      <div className="p-4 inline-flex rounded-full bg-yellow-400/10 text-yellow-400 mb-6">
-        <Icon className="w-8 h-8" />
-      </div>
-      <h3 className="text-2xl font-bold text-white mb-3">{title}</h3>
-      <p className="text-slate-400">{desc}</p>
-      <a href="#contatti" className="mt-4 inline-flex items-center text-yellow-400 font-semibold hover:text-white transition-colors">
-        Scopri &nbsp;<ChevronRight className="w-4 h-4" />
-      </a>
+        {/* CARD (Visibile a sinistra se reverse=false) */}
+        <div className={`order-2 md:order-1 ${reverse ? 'md:order-2' : 'md:order-1'}`}>
+             <div className="p-8 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl">
+                 <div className="p-4 inline-flex rounded-full bg-yellow-400/10 text-yellow-400 mb-6">
+                    <Icon className="w-10 h-10" />
+                 </div>
+                 <h3 className="text-3xl font-bold text-white mb-3">{title}</h3>
+                 <p className="text-slate-400 text-lg">{desc}</p>
+                 <a href="#contatti" className="mt-6 inline-flex items-center text-yellow-400 font-semibold hover:text-white transition-colors group">
+                    Richiedi Consulenza &nbsp;<ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                 </a>
+             </div>
+        </div>
+
+        {/* TESTO / HEADLINE (Visibile a destra se reverse=false) */}
+        <div className={`order-1 md:order-2 ${reverse ? 'md:order-1' : 'md:order-2'} ${reverse ? 'md:pr-12' : 'md:pl-12'}`}>
+            <p className="text-yellow-400 uppercase font-bold text-sm mb-3">La Nostra Specialità</p>
+            <h3 className="text-3xl font-bold text-white mb-4 leading-snug">Il tuo progetto. La nostra competenza.</h3>
+            <p className="text-slate-400 text-md">
+                Scopri come il nostro team di esperti certificati può trasformare la tua visione in un impianto sicuro, efficiente e a norma. 
+            </p>
+        </div>
     </motion.div>
 );
 
-// Sezione Servizi (Grid Layout)
+// Sezione Servizi (Layout a ZigZag)
 const ServicesGrid = () => {
+    // TESTI MIGLIORATI: Più focalizzati sui benefici e sul tono specialistico.
     const services = [
-      { icon: Home, title: "Impianti Residenziali", desc: "Sistemi domotici intelligenti, gestione carichi e quadri elettrici a norma per la massima sicurezza e comfort in casa." },
-      { icon: Factory, title: "Settore Industriale", desc: "Cabine di trasformazione, power center, automazione industriale e manutenzione predittiva per la continuità operativa." },
-      { icon: ShieldCheck, title: "Sicurezza & TVCC", desc: "Sistemi antintrusione connessi, videosorveglianza IP ad alta risoluzione e controlli accessi perimetrali." },
-      { icon: BatteryCharging, title: "Fotovoltaico & Storage", desc: "Progettazione e installazione di impianti fotovoltaici con accumulatori per l'indipendenza energetica totale." },
-      { icon: Lightbulb, title: "Illuminazione LED", desc: "Soluzioni di illuminazione ad alta efficienza e design, incluse l'illuminazione pubblica e industriale." },
-      { icon: Cpu, title: "Automazione Domotica", desc: "Integrazione completa di riscaldamento, clima, sicurezza e multimedia in un unico sistema gestibile da remoto." },
+      { 
+        icon: Home, 
+        title: "Domotica & Sistemi Residenziali", 
+        desc: "Progettiamo la tua casa intelligente. Installazione di impianti elettrici a norma, sistemi di gestione carichi e domotica avanzata per un comfort domestico personalizzato e un risparmio energetico ottimale.",
+      },
+      { 
+        icon: Factory, 
+        title: "Impianti Industriali e Terziario", 
+        desc: "Garantiamo la continuità operativa del tuo business. Dalle cabine di trasformazione MT/BT ai quadri elettrici complessi, forniamo soluzioni di automazione industriale e manutenzione preventiva essenziali.",
+      },
+      { 
+        icon: ShieldCheck, 
+        title: "Sicurezza, Allarmi e Videosorveglianza", 
+        desc: "Proteggi il tuo patrimonio con tecnologie all'avanguardia. Integrazione di sistemi antintrusione, TVCC IP ad alta risoluzione e controlli d'accesso per una sicurezza perimetrale e interna senza compromessi.",
+      },
+      { 
+        icon: BatteryCharging, 
+        title: "Fotovoltaico con Sistemi di Accumulo", 
+        desc: "Raggiungi l'indipendenza energetica. Installazione 'chiavi in mano' di pannelli fotovoltaici ad alta efficienza e sistemi di storage per massimizzare l'autoconsumo e ridurre drasticamente i costi in bolletta.",
+      },
+      { 
+        icon: Lightbulb, 
+        title: "Illuminazione Tecnica LED e Design", 
+        desc: "Valorizziamo i tuoi spazi con l'efficienza. Soluzioni di illuminazione su misura (pubblica, industriale, architetturale) che garantiscono un basso consumo e una resa luminosa perfetta, supportate da calcoli illuminotecnici.",
+      },
+      { 
+        icon: Cpu, 
+        title: "Manutenzione e Adeguamento Normativo", 
+        desc: "Manteniamo il tuo impianto sicuro e certificato. Offriamo contratti di manutenzione programmata e interventi di adeguamento obbligatorio (DiCo) per garantire sempre il rispetto delle normative CEI vigenti.",
+      },
     ];
 
     return (
@@ -240,10 +273,15 @@ const ServicesGrid = () => {
                     <h2 className="text-4xl md:text-5xl font-bold text-white">Tecnologia, Sicurezza, Efficienza.</h2>
                 </div>
 
-                {/* Griglia di Card */}
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {/* Struttura a ZigZag */}
+                <div className="max-w-6xl mx-auto divide-y divide-white/5">
                     {services.map((service, index) => (
-                        <ServiceCard key={index} {...service} delay={index * 0.15} />
+                        <ServiceZigZagItem 
+                            key={index} 
+                            {...service} 
+                            reverse={index % 2 !== 0} // Alterna la direzione (true per i dispari)
+                            delay={0.1} // Delay fisso per un effetto più rapido
+                        />
                     ))}
                 </div>
             </div>
@@ -251,7 +289,10 @@ const ServicesGrid = () => {
     );
 };
 
-// Componente Vantaggio con animazione
+// Componente Card del Servizio (Rimosso, ora usa ServiceZigZagItem)
+// const ServiceCard = ...
+
+// Componente Vantaggio con animazione (Invariato)
 const BenefitItem = ({ icon: Icon, title, desc, delay }) => (
   <motion.div
     initial={{ opacity: 0, x: -50 }}
@@ -270,7 +311,7 @@ const BenefitItem = ({ icon: Icon, title, desc, delay }) => (
   </motion.div>
 );
 
-// Sezione Vantaggi (Perché Sceglierci)
+// Sezione Vantaggi (Perché Sceglierci) (Invariato)
 const Benefits = () => {
   const benefits = [
     { icon: ClipboardCheck, title: "Certificazione Garantita", desc: "Tutti i nostri impianti sono rilasciati con dichiarazione di conformità (DiCo) secondo le normative CEI in vigore." },
@@ -288,7 +329,7 @@ const Benefits = () => {
           <div className="lg:pr-10">
             <p className="text-yellow-400 uppercase font-bold text-sm mb-2">Il Nostro Valore Aggiunto</p>
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Scegliere Flash Impianti è Scegliere la Qualità.</h2>
-            <p className="text-slate-300 text-lg mb-8">
+            <p className className="text-slate-300 text-lg mb-8">
               Non siamo solo installatori, siamo consulenti energetici. Ti aiutiamo a fare scelte informate che impattano positivamente sull'ambiente e sul tuo bilancio.
             </p>
             <ElectricButton text="Inizia la tua Trasformazione" />
@@ -307,7 +348,7 @@ const Benefits = () => {
 };
 
 
-// Sezione Contatti con Form
+// Sezione Contatti con Form (Invariata)
 const Contact = () => {
   // Funzione fittizia per la sottomissione
   const handleSubmit = (e) => {
@@ -353,7 +394,7 @@ const Contact = () => {
   );
 };
 
-// Footer (Piè di Pagina)
+// Footer (Piè di Pagina) (Invariato)
 const Footer = () => (
   <footer className="bg-slate-950 text-slate-500 py-10 border-t border-white/10">
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
@@ -372,23 +413,10 @@ const Footer = () => (
 
 // Componente Principale App
 export default function App() {
-  // Aggiungiamo uno stile per l'animazione shimmer, anche se non è il metodo ideale in React,
-  // aiuta a simulare l'effetto richiesto nel pulsante ElectricButton.
-  // In un progetto reale, lo aggiungeresti al CSS globale.
-  const shimmerStyle = `
-    @keyframes shimmer {
-      0% { transform: translateX(-100%); }
-      100% { transform: translateX(300%); }
-    }
-    .group:hover .group-hover\\:animate-shimmer {
-      animation: shimmer 1.5s infinite;
-    }
-  `;
+  // Rimozione dello stile shimmer inline come best practice.
 
   return (
     <div className="bg-slate-950 min-h-screen font-sans text-slate-200 selection:bg-yellow-400 selection:text-black overflow-x-hidden">
-      {/* Stile CSS inline per l'animazione (metodo non convenzionale ma funzionale) */}
-      <style>{shimmerStyle}</style>
 
       <Navbar />
       <main>
@@ -401,4 +429,3 @@ export default function App() {
     </div>
   );
 }
-
