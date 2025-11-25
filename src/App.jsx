@@ -12,8 +12,8 @@ const textVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.6 } },
 };
 
-// --- COMPONENTE: SVG che Traccia lo Scroll (MODIFICATO per inclinazione) ---
-const ScrollPathSVG = React.forwardRef(({ heightInViewBox = "1000", widthInViewBox = "100" }, ref) => {
+// --- COMPONENTE: SVG che Traccia lo Scroll (CORRETTO e INCLINATO) ---
+const ScrollPathSVG = React.forwardRef(({ heightInViewBox = "1000", widthInViewBox = "200" }, ref) => {
   
   // Traccia lo scroll sull'elemento referenziato (passato da HeroRef)
   const { scrollYProgress } = useScroll({
@@ -28,15 +28,10 @@ const ScrollPathSVG = React.forwardRef(({ heightInViewBox = "1000", widthInViewB
     restDelta: 0.001
   });
 
-  // Modifica il percorso per renderlo inclinato di ~45 gradi
-  // Il punto di partenza è (50, 0)
-  // Il punto finale è (100, 1000) per un'inclinazione verso destra (45 gradi se viewBox è quadrata)
-  // Manteniamo un po' di curva per un aspetto più organico
-  const pathD = `M 50 0 L 100 ${heightInViewBox}`; // Linea retta a 45 gradi (partendo da 50,0 e finendo a 100, altezza_totale)
-  // Per una curva più morbida come prima, ma inclinata:
-  // d="M 50 0 C 70 300, 80 500, 100 700 L 100 1000" // Esempio con curva
-  // Usiamo una linea dritta per ora per semplificare l'allineamento a 45 gradi
-  // Possiamo aggiustare i punti della curva se vogliamo più tardi
+  // Path per un'inclinazione:
+  // Parte da X=50 e finisce a X=150. (Spostamento orizzontale di 100 su 1000 verticale)
+  // Questo crea un'inclinazione visiva di circa 45 gradi nel container da 100px.
+  const pathD = `M 50 0 L 150 ${heightInViewBox}`; 
 
   return (
     <div className="absolute inset-0 z-10 pointer-events-none">
@@ -48,7 +43,7 @@ const ScrollPathSVG = React.forwardRef(({ heightInViewBox = "1000", widthInViewB
         className="w-full h-full"
       >
         <motion.path
-          d={pathD} // Usa il nuovo percorso inclinato
+          d={pathD} 
           fill="none"
           stroke="#FACC15"
           strokeWidth="4"
@@ -173,9 +168,9 @@ const Navbar = () => {
 const Hero = () => {
   const [startX, setStartX] = useState(null); 
   const [startY, setStartY] = useState(null); 
-  const [pathHeight, setPathHeight] = useState('50vh'); // Nuova altezza dinamica per la scia
+  const [pathHeight, setPathHeight] = useState('50vh'); // Altezza dinamica per la scia
   const heroRef = useRef(null); 
-  const imageRef = useRef(null); 
+  const imageRef = useRef(null); // Ref per l'icona BatteryCharging
 
   useEffect(() => {
     const calculatePosition = () => {
@@ -190,10 +185,10 @@ const Hero = () => {
         // Y: bordo inferiore dell'immagine rispetto al top della sezione Hero
         const bottomRelativeYToHero = imageRect.bottom - heroRect.top;
         
-        if (imageRect.width === 0) { // L'elemento è nascosto (es. mobile)
+        if (imageRect.width === 0) {
             setStartX(null);
             setStartY(null);
-            setPathHeight('50vh'); // Torna all'altezza di default
+            setPathHeight('50vh');
         } else {
             setStartX(centerRelativeXToHero);
             setStartY(bottomRelativeYToHero);
@@ -210,8 +205,6 @@ const Hero = () => {
     calculatePosition();
     window.addEventListener('resize', calculatePosition);
 
-    // Esegui la funzione anche se l'immagine potrebbe non essere subito caricata
-    // Utile per assicurarsi che i ref siano popolati
     const timeout = setTimeout(calculatePosition, 100); 
 
     return () => {
@@ -222,43 +215,19 @@ const Hero = () => {
 
   // Stile dinamico per il container della scia
   const scrollPathContainerStyle = {
-    // Il div della scia ha larghezza 10px. Vogliamo che il centro (5px) sia a startX
-    left: startX !== null ? `${startX - 5}px` : '50%', 
+    // Il path SVG ha viewBox 200x1000 e parte da x=50 (25% della larghezza).
+    // Dando al container una larghezza di 100px, l'offset di partenza è 25px.
+    // Posizioniamo il container in modo che il punto di partenza (25px) sia allineato a startX.
+    left: startX !== null ? `${startX - 25}px` : '50%', 
     top: startY !== null ? `${startY}px` : 'auto', 
-    height: pathHeight, // Altezza dinamica
+    height: pathHeight, 
+    width: '100px', // Larghezza per contenere l'inclinazione (ViewBox 200x1000 -> 100px di inclinazione visiva)
     transform: startX === null || startY === null ? 'translateX(-50%)' : 'none', 
-    // Larghezza del container della scia per accogliere l'inclinazione
-    // Se la scia deve andare giù di 1000 unità e spostarsi di 50 unità orizzontalmente
-    // Per una linea a 45 gradi circa (50 unità orizzontali per ogni 1000 verticali, 1000/50 = 20)
-    // Se vogliamo 45 gradi "veri" dovremmo avere la stessa variazione X e Y
-    // Per ottenere un'inclinazione visiva di circa 45 gradi con un'altezza variabile,
-    // dobbiamo dare al container una larghezza proporzionale all'altezza e all'inclinazione desiderata.
-    // Una pendenza di 1:1 (45 gradi) significa che per ogni 1px verticale, c'è 1px orizzontale.
-    // Il nostro viewBox è 100x1000. La linea va da x=50 a x=100 (50 unità). Per 1000 unità verticali.
-    // Quindi la pendenza è 50/1000 = 1/20. Per un'inclinazione di 45°, avremmo bisogno di 1000 di larghezza.
-    // Impostiamo la larghezza in base all'altezza calcolata e un fattore di pendenza.
-    // Useremo una larghezza fissa per l'SVG (es. 100) e un path che si adatta.
-    // Per avere una pendenza di ~45 gradi visivi, l'SVG deve avere larghezza e altezza simili nel DOM.
-    // Data l'altezza dinamica, è meglio dare al container una larghezza basata su quell'altezza.
-    // Per 45 gradi, width = height. Ma l'SVG ha una larghezza di 10px nel DOM.
-    // L'SVG ha width="100%" e height="100%". La ViewBox è 100x1000.
-    // Se il div è 10px di larghezza e 500px di altezza, lo SVG sarà schiacciato.
-    // Dobbiamo estendere il `width` del div e anche il `viewBox` dell'SVG.
-    width: startX !== null ? `calc(10px + ${parseFloat(pathHeight) / 10}px)` : '10px', // Esempio per circa 45 gradi
   };
 
-  // Se la scia deve essere a 45 gradi, la sua larghezza deve essere uguale alla sua altezza.
-  // Ma non vogliamo che la scia sia larga centinaia di pixel.
-  // Invece di far pendere l'intero div, faremo in modo che il path SVG si inclini all'interno
-  // di un div di larghezza controllata.
-
-  // Per mantenere l'SVG di 10px di larghezza nel DOM ma avere un path inclinato:
-  // Dobbiamo cambiare il `d` del path per andare da (50,0) a (X_FINALE, ALTEZZA_VIEWBOX).
-  // Se la ViewBox è 100x1000, una linea da (50,0) a (100,1000) è un'inclinazione di 50px su 1000px.
-  // Che non è 45 gradi. Per ~45 gradi visivi con un contenitore di 10px di larghezza,
-  // l'inclinazione dovrà essere molto piccola all'interno della ViewBox (es. 50,0 -> 51,1000).
 
   return (
+    // Assegna heroRef a tutta la sezione per il tracciamento dello scroll
     <section ref={heroRef} className="relative min-h-screen flex flex-col pt-20 overflow-hidden bg-slate-950 z-10">
       <div className="absolute inset-0 z-0 overflow-hidden">
         {/* Animazione di sfondo energetica */}
@@ -267,7 +236,7 @@ const Hero = () => {
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10" />
       </div>
 
-      {/* Contenuto Principale */}
+      {/* Contenuto Principale (Riapparso e Corretto) */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10 grid lg:grid-cols-12 gap-12 items-center flex-grow">
         <motion.div 
           className="lg:col-span-7 pt-12 lg:pt-0"
@@ -320,7 +289,7 @@ via-yellow-200 to-white">
           </motion.div>
         </motion.div>
         
-        {/* Icona 3D Impianto (Elemento visivo) */}
+        {/* Icona 3D Impianto (Elemento visivo) - Con il ref per il calcolo della posizione */}
         <div
           className="lg:col-span-5 relative hidden lg:flex items-center justify-center h-full min-h-[400px]"
         >
@@ -340,13 +309,11 @@ via-yellow-200 to-white">
         </div>
       </div>
 
-      {/* INTEGRAZIONE DEL NUOVO ELEMENTO DI SCROLL - Con posizione e altezza dinamiche */}
+      {/* INTEGRAZIONE DELLA SCIA - Posizionamento dinamico e Inclinazione */}
       <div 
-        className="absolute z-20 pointer-events-none" 
+        className="absolute z-20 pointer-events-none overflow-hidden" 
         style={scrollPathContainerStyle}
       >
-        {/* PASSA heroRef A SCROLLPATHSVG */}
-        {/* Ora widthInViewBox deve essere più grande per contenere l'inclinazione */}
         <ScrollPathSVG ref={heroRef} heightInViewBox={1000} widthInViewBox={200} /> 
       </div>
       
@@ -521,4 +488,47 @@ const Contact = () => {
             ></textarea>
             
             <button
-              type="submit"
+              type="submit" 
+              className="w-full py-3 bg-yellow-400 text-slate-900 font-bold rounded-lg hover:bg-yellow-300 transition-all uppercase text-lg shadow-xl shadow-yellow-400/30"
+            >
+              Invia la Mia Richiesta
+            </button>
+          </motion.form>
+       </div>
+    </section>
+  );
+};
+ 
+// Footer (Piè di Pagina)
+const Footer = () => (
+  <footer className="bg-slate-950 text-slate-500 py-10 border-t border-white/10">
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
+      <div className="flex flex-col gap-2 items-center md:items-start">
+        <Logo />
+        <p className="text-xs mt-2 text-slate-600">P.IVA 01234567890 | Via dell'Energia, 1 - 00100 Roma (RM)</p>
+        <p className="text-xs text-slate-400">© 2024 FlashImpianti. Tutti i diritti riservati.</p>
+      </div>
+      <div className="flex gap-4 text-sm font-medium">
+        <a href="#" className="hover:text-yellow-400 transition-colors">Privacy Policy</a>
+        <a href="#" className="hover:text-yellow-400 transition-colors">Termini di Servizio</a>
+      </div>
+    </div>
+  </footer>
+);
+ 
+// Componente Principale App
+export default function App() {
+  return (
+    <div className="bg-slate-950 min-h-screen font-sans text-slate-200 selection:bg-yellow-400 selection:text-black overflow-x-hidden">
+      
+      <Navbar />
+      <main>
+        <Hero />
+        <ServicesGrid />
+        <Benefits />
+        <Contact />
+      </main>
+      <Footer />
+    </div>
+  );
+}
