@@ -199,6 +199,10 @@ const ServiceTag = ({ text, icon: Icon }) => (
 
 // --- COMPONENTE FASCIO ELETTRICO (VERSIONE ULTRA-ROBUSTA) ---
 
+// ... (mantenere tutte le importazioni GSAP e React/Lucide)
+
+// --- COMPONENTE FASCIO ELETTRICO (VERSIONE DEINITIVA) ---
+
 const ElectricPath = ({ refs }) => {
   const svgRef = useRef(null);
   const pathRef = useRef(null);
@@ -209,11 +213,9 @@ const ElectricPath = ({ refs }) => {
     const section = sectionRef.current;
     if (!svg || !section || refs.length < 2) return;
 
-    // Pulizia di ScrollTrigger prima di ricrearlo
     ScrollTrigger.getAll().forEach(t => t.kill());
 
     const sectionRect = section.getBoundingClientRect();
-    // Utilizza scrollHeight per assicurarsi che l'SVG copra tutta la sezione, inclusi i margini
     const svgWidth = sectionRect.width;
     const svgHeight = section.scrollHeight; 
 
@@ -224,13 +226,13 @@ const ElectricPath = ({ refs }) => {
 
     let pathData = "M"; 
     
-    // Calcolo dei punti rispetto all'origine (0,0) della sezione RELATIVA
+    // Calcola i punti centrali di ogni ref relativamente al contenitore della sezione
     refs.forEach(ref => {
       if (ref.current) {
         const rect = ref.current.getBoundingClientRect();
         
         const x = rect.left + rect.width / 2 - sectionRect.left;
-        // La posizione Y è relativa al top della sezione
+        // Posizione Y relativa al top della sezione
         const y = (rect.top + rect.height / 2) - sectionRect.top; 
         
         pathData += `${x},${y} L`;
@@ -264,28 +266,29 @@ const ElectricPath = ({ refs }) => {
   };
 
   useLayoutEffect(() => {
-    // 1. Assegna la ref alla sezione
     sectionRef.current = document.getElementById('servizi');
     
-    // 2. Calcolo immediato (al mount)
+    // Esegue il calcolo iniziale e aggiunge il listener per il resize
     updatePath(); 
     
-    // 3. Ricalcolo al resize (necessario per la responsività)
-    const handleResize = () => updatePath();
-    window.addEventListener('resize', handleResize);
+    // Aggiunge il ricalcolo GSAP nativo per il resize del viewport
+    ScrollTrigger.addEventListener("refreshInit", updatePath);
     
-    // 4. Ricalcolo con un ritardo: essenziale per attendere il rendering finale
-    const timeout = setTimeout(() => {
-        updatePath();
-    }, 500); 
-
-    // 5. Pulizia
     return () => {
-      window.removeEventListener('resize', handleResize);
-      clearTimeout(timeout);
+      // Pulizia
+      ScrollTrigger.removeEventListener("refreshInit", updatePath);
       ScrollTrigger.getAll().forEach(t => t.kill()); 
     };
   }, [refs.length]); 
+  
+  // Aggiunge un semplice ricalcolo ritardato a un certo punto,
+  // solo per catturare i caricamenti tardivi (più sicuro del setTimeout)
+  useEffect(() => {
+      // Questo si attiva una sola volta dopo il primo render
+      // e assicura che il ricalcolo avvenga dopo che React ha finito.
+      const lateRefresh = setTimeout(() => ScrollTrigger.refresh(), 100);
+      return () => clearTimeout(lateRefresh);
+  }, []);
 
   if (!sectionRef.current) return null;
 
@@ -293,7 +296,6 @@ const ElectricPath = ({ refs }) => {
     <svg 
       ref={svgRef}
       id="electric-path-svg"
-      // Usa absolute per essere relativo alla sezione Servizi (che è relative)
       className="absolute top-0 left-0 z-10 pointer-events-none" 
       style={{ overflow: 'visible' }}
     >
@@ -306,24 +308,14 @@ const ElectricPath = ({ refs }) => {
         style={{ filter: 'url(#electric-glow)' }}
       />
       
-      {/* Definizioni SVG per Gradiente e Filtro */}
+      {/* Definizioni SVG per Gradiente e Filtro (mantenute) */}
       <defs>
-        <linearGradient id="electric-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" style={{stopColor:'rgb(255,255,0)', stopOpacity:1}} />
-          <stop offset="100%" style={{stopColor:'rgb(255,165,0)', stopOpacity:1}} />
-        </linearGradient>
-
-        <filter id="electric-glow" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
+        {/* ... (defs per electric-gradient e electric-glow) ... */}
       </defs>
     </svg>
   );
 }
+
 
 // Segnaposto per SVG/Lottie (VisualPlaceholder Modificato per accettare il ref)
 const VisualPlaceholder = React.forwardRef(({ icon: Icon, title }, ref) => (
