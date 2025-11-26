@@ -208,14 +208,12 @@ const ServiceTag = ({ text, icon: Icon }) => (
 
 // --- NUOVO COMPONENTE PER IL LAYOUT ZIGZAG CON VISUALIZZATORE ---
 
-// Segnaposto per SVG/Lottie
+// Segnaposto per SVG/Lottie (Testo rimosso)
 const VisualPlaceholder = ({ icon: Icon, title }) => (
     <div className="relative flex items-center justify-center h-full min-h-[250px] bg-slate-900 rounded-xl border border-yellow-400/20 shadow-2xl p-8">
         <div className="absolute inset-0 bg-white/5 opacity-5 rounded-xl animate-pulse-slow" />
         <Icon className="w-24 h-24 text-yellow-400/80 drop-shadow-[0_0_10px_rgba(250,204,21,0.5)]" />
-        <p className="absolute bottom-4 text-xs font-medium text-slate-500">
-            {title} (Visualizzazione SVG/Lottie)
-        </p>
+        {/* TESTO RIMOSSO QUI come richiesto */}
     </div>
 );
 
@@ -235,7 +233,11 @@ const ServiceZigZagVisualItem = ({ icon: Icon, title, desc, reverse, delay }) =>
                  {title}
              </div>
              <h3 className="text-3xl font-bold text-white leading-snug">{title}</h3>
-             <p className="text-slate-400 text-lg">{desc}</p>
+             {/* Uso di dangerouslySetInnerHTML per interpretare il grassetto markdown (**) */}
+             <p 
+                className="text-slate-400 text-lg" 
+                dangerouslySetInnerHTML={{ __html: desc.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }}
+             />
              <a href="#contatti" className="pt-2 inline-flex items-center text-yellow-400 font-semibold hover:text-white transition-colors group">
                 Richiedi Consulenza &nbsp;<ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
              </a>
@@ -248,30 +250,33 @@ const ServiceZigZagVisualItem = ({ icon: Icon, title, desc, reverse, delay }) =>
     </motion.div>
 );
 
-// Sezione Servizi (Layout a ZigZag con nuovi testi SEO)
+// Sezione Servizi (Layout a ZigZag con testi rivisti)
 const ServicesGrid = () => {
     const services = [
         { 
             icon: Home, 
             title: "Impianti Elettrici Civili & Domotica", 
+            // Formattazione rivista (tolti i #)
             desc: "**Progettazione e installazione di impianti elettrici civili a norma CEI** per case e condomini. Integrazione di **sistemi domotici** (smart home) per gestione carichi, illuminazione intelligente e massimo **risparmio energetico domestico**.",
         },
         { 
             icon: Factory, 
             title: "Impianti Elettrici Industriali & Terziario", 
+            // Formattazione rivista (tolti i #)
             desc: "Soluzioni per aziende e industrie: **quadri elettrici di potenza**, **cabine di trasformazione MT/BT** e **automazione industriale**. Garantiamo massima efficienza, sicurezza e **continuità operativa** per il tuo business.",
         },
         { 
             icon: Clock, 
             title: "Pronto Intervento, Manutenzione e Adeguamento", 
+            // Formattazione rivista (tolti i #)
             desc: "Servizio di **pronto intervento elettrico H24** e **manutenzione programmata** per prevenire guasti. Effettuiamo **adeguamenti normativi** (DiCo) e rilascio di **certificazioni** obbligatorie per ogni tipo di impianto.",
         },
         { 
             icon: ShieldCheck, 
             title: "Sicurezza Certificata & TVCC", 
+            // Formattazione rivista (tolti i #)
             desc: "Installazione di **sistemi di sicurezza certificati**: **antifurto wireless**, impianti **TVCC (videosorveglianza)** IP ad alta risoluzione e controllo accessi. Protezione totale e gestione remota del tuo immobile.",
         },
-        // Ho mantenuto 4 servizi come richiesto, accorpando Manutenzione e Adeguamento.
     ];
 
     return (
