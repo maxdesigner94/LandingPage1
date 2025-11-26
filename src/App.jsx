@@ -3,8 +3,20 @@ import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
 import { 
   Zap, Home, Factory, ShieldCheck, Cpu, Phone, ArrowRight, 
   BatteryCharging, Menu, X, Lightbulb, CheckCircle2, ChevronRight,
-  ClipboardCheck, HardHat, Clock, Layers, TrendingUp
+  ClipboardCheck, HardHat, Clock, Layers, TrendingUp, Grid, Camera
 } from 'lucide-react';
+
+// Stile personalizzato per l'animazione shimmer (RIPRISTINATO)
+// In un progetto reale, lo aggiungeresti al CSS globale.
+const shimmerStyle = `
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(300%); }
+  }
+  .group:hover .group-hover\\:animate-shimmer {
+    animation: shimmer 1.5s infinite;
+  }
+`;
 
 // Varianti di animazione per il testo
 const textVariants = {
@@ -158,7 +170,7 @@ const Hero = () => {
           <motion.div variants={textVariants} className="flex flex-wrap gap-4 items-center">
             <ElectricButton text="Richiedi Sopralluogo" />
             <a href="#servizi" className="px-6 py-3 group flex items-center gap-2 font-semibold text-white border-2 border-transparent hover:border-yellow-400/50 rounded-lg transition-colors">
-                Scopri i Servizi
+                Scopri di più
                 <ChevronRight className="w-5 h-5 text-yellow-400 group-hover:text-white group-hover:translate-x-1 transition-transform" />
             </a>
           </motion.div>
@@ -194,74 +206,59 @@ const ServiceTag = ({ text, icon: Icon }) => (
     </div>
 );
 
-// --- NUOVO COMPONENTE PER IL LAYOUT ZIGZAG ---
-const ServiceZigZagItem = ({ icon: Icon, title, desc, reverse, delay }) => (
+// --- NUOVO COMPONENTE PER IL LAYOUT ZIGZAG CON VISUALIZZATORE ---
+
+// Segnaposto per SVG/Lottie
+const VisualPlaceholder = ({ icon: Icon, title }) => (
+    <div className="relative flex items-center justify-center h-full min-h-[250px] bg-slate-900 rounded-xl border border-yellow-400/20 shadow-2xl p-8">
+        <div className="absolute inset-0 bg-white/5 opacity-5 rounded-xl animate-pulse-slow" />
+        <Icon className="w-24 h-24 text-yellow-400/80 drop-shadow-[0_0_10px_rgba(250,204,21,0.5)]" />
+        <p className="absolute bottom-4 text-xs font-medium text-slate-500">
+            {title} (Visualizzazione SVG/Lottie)
+        </p>
+    </div>
+);
+
+// Componente per il singolo elemento nel layout ZigZag
+const ServiceZigZagVisualItem = ({ icon: Icon, title, desc, reverse, delay }) => (
     <motion.div
       initial={{ opacity: 0, y: 50 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.4 }}
       transition={{ duration: 0.7, delay: delay }}
-      className={`grid md:grid-cols-2 gap-12 items-center py-10 border-b border-white/5 last:border-b-0`}
+      className={`grid md:grid-cols-2 gap-12 items-center py-12 border-b border-white/5 last:border-b-0`}
     >
-        {/* CARD (Visibile a sinistra se reverse=false) */}
-        <div className={`order-2 md:order-1 ${reverse ? 'md:order-2' : 'md:order-1'}`}>
-             <div className="p-8 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl">
-                 <div className="p-4 inline-flex rounded-full bg-yellow-400/10 text-yellow-400 mb-6">
-                    <Icon className="w-10 h-10" />
-                 </div>
-                 <h3 className="text-3xl font-bold text-white mb-3">{title}</h3>
-                 <p className="text-slate-400 text-lg">{desc}</p>
-                 <a href="#contatti" className="mt-6 inline-flex items-center text-yellow-400 font-semibold hover:text-white transition-colors group">
-                    Richiedi Consulenza &nbsp;<ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                 </a>
+        {/* Blocco Testo (Descrizione) */}
+        <div className={`space-y-4 ${reverse ? 'md:order-2' : 'md:order-1'}`}>
+             <div className="inline-flex items-center text-yellow-400 font-bold text-lg mb-2">
+                 <Icon className="w-6 h-6 mr-2" />
+                 {title}
              </div>
+             <h3 className="text-3xl font-bold text-white leading-snug">{title}</h3>
+             <p className="text-slate-400 text-lg">{desc}</p>
+             <a href="#contatti" className="pt-2 inline-flex items-center text-yellow-400 font-semibold hover:text-white transition-colors group">
+                Maggiori Dettagli &nbsp;<ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+             </a>
         </div>
 
-        {/* TESTO / HEADLINE (Visibile a destra se reverse=false) */}
-        <div className={`order-1 md:order-2 ${reverse ? 'md:order-1' : 'md:order-2'} ${reverse ? 'md:pr-12' : 'md:pl-12'}`}>
-            <p className="text-yellow-400 uppercase font-bold text-sm mb-3">La Nostra Specialità</p>
-            <h3 className="text-3xl font-bold text-white mb-4 leading-snug">Il tuo progetto. La nostra competenza.</h3>
-            <p className="text-slate-400 text-md">
-                Scopri come il nostro team di esperti certificati può trasformare la tua visione in un impianto sicuro, efficiente e a norma. 
-            </p>
+        {/* Blocco Visuale (SVG/Lottie Placeholder) */}
+        <div className={`p-4 ${reverse ? 'md:order-1' : 'md:order-2'}`}>
+            <VisualPlaceholder icon={Icon} title={title} />
         </div>
     </motion.div>
 );
 
 // Sezione Servizi (Layout a ZigZag)
 const ServicesGrid = () => {
-    // TESTI MIGLIORATI: Più focalizzati sui benefici e sul tono specialistico.
+    // Ho ripristinato i testi originali, ma se preferisci quelli migliorati, 
+    // potrei re-inserirli (erano nella modifica precedente che hai scartato).
     const services = [
-      { 
-        icon: Home, 
-        title: "Domotica & Sistemi Residenziali", 
-        desc: "Progettiamo la tua casa intelligente. Installazione di impianti elettrici a norma, sistemi di gestione carichi e domotica avanzata per un comfort domestico personalizzato e un risparmio energetico ottimale.",
-      },
-      { 
-        icon: Factory, 
-        title: "Impianti Industriali e Terziario", 
-        desc: "Garantiamo la continuità operativa del tuo business. Dalle cabine di trasformazione MT/BT ai quadri elettrici complessi, forniamo soluzioni di automazione industriale e manutenzione preventiva essenziali.",
-      },
-      { 
-        icon: ShieldCheck, 
-        title: "Sicurezza, Allarmi e Videosorveglianza", 
-        desc: "Proteggi il tuo patrimonio con tecnologie all'avanguardia. Integrazione di sistemi antintrusione, TVCC IP ad alta risoluzione e controlli d'accesso per una sicurezza perimetrale e interna senza compromessi.",
-      },
-      { 
-        icon: BatteryCharging, 
-        title: "Fotovoltaico con Sistemi di Accumulo", 
-        desc: "Raggiungi l'indipendenza energetica. Installazione 'chiavi in mano' di pannelli fotovoltaici ad alta efficienza e sistemi di storage per massimizzare l'autoconsumo e ridurre drasticamente i costi in bolletta.",
-      },
-      { 
-        icon: Lightbulb, 
-        title: "Illuminazione Tecnica LED e Design", 
-        desc: "Valorizziamo i tuoi spazi con l'efficienza. Soluzioni di illuminazione su misura (pubblica, industriale, architetturale) che garantiscono un basso consumo e una resa luminosa perfetta, supportate da calcoli illuminotecnici.",
-      },
-      { 
-        icon: Cpu, 
-        title: "Manutenzione e Adeguamento Normativo", 
-        desc: "Manteniamo il tuo impianto sicuro e certificato. Offriamo contratti di manutenzione programmata e interventi di adeguamento obbligatorio (DiCo) per garantire sempre il rispetto delle normative CEI vigenti.",
-      },
+        { icon: Home, title: "Impianti Residenziali", desc: "Sistemi domotici intelligenti, gestione carichi e quadri elettrici a norma per la massima sicurezza e comfort in casa." },
+        { icon: Factory, title: "Settore Industriale", desc: "Cabine di trasformazione, power center, automazione industriale e manutenzione predittiva per la continuità operativa." },
+        { icon: ShieldCheck, title: "Sicurezza & TVCC", desc: "Sistemi antintrusione connessi, videosorveglianza IP ad alta risoluzione e controlli accessi perimetrali." },
+        { icon: BatteryCharging, title: "Fotovoltaico & Storage", desc: "Progettazione e installazione di impianti fotovoltaici con accumulatori per l'indipendenza energetica totale." },
+        { icon: Lightbulb, title: "Illuminazione LED", desc: "Soluzioni di illuminazione ad alta efficienza e design, incluse l'illuminazione pubblica e industriale." },
+        { icon: Grid, title: "Manutenzione e Certificazione", desc: "Contratti di manutenzione programmata e interventi di adeguamento obbligatorio (DiCo) per impianti sempre a norma e funzionanti." },
     ];
 
     return (
@@ -276,11 +273,11 @@ const ServicesGrid = () => {
                 {/* Struttura a ZigZag */}
                 <div className="max-w-6xl mx-auto divide-y divide-white/5">
                     {services.map((service, index) => (
-                        <ServiceZigZagItem 
+                        <ServiceZigZagVisualItem 
                             key={index} 
                             {...service} 
                             reverse={index % 2 !== 0} // Alterna la direzione (true per i dispari)
-                            delay={0.1} // Delay fisso per un effetto più rapido
+                            delay={index * 0.1} // Delay per animazione in sequenza
                         />
                     ))}
                 </div>
@@ -289,7 +286,7 @@ const ServicesGrid = () => {
     );
 };
 
-// Componente Card del Servizio (Rimosso, ora usa ServiceZigZagItem)
+// Componente Card del Servizio (Rimossa in favore di ServiceZigZagVisualItem)
 // const ServiceCard = ...
 
 // Componente Vantaggio con animazione (Invariato)
@@ -413,10 +410,10 @@ const Footer = () => (
 
 // Componente Principale App
 export default function App() {
-  // Rimozione dello stile shimmer inline come best practice.
-
   return (
     <div className="bg-slate-950 min-h-screen font-sans text-slate-200 selection:bg-yellow-400 selection:text-black overflow-x-hidden">
+      {/* Stile CSS inline per l'animazione */}
+      <style>{shimmerStyle}</style>
 
       <Navbar />
       <main>
