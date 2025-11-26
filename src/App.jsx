@@ -13,8 +13,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 // Registra i plugin di GSAP
 gsap.registerPlugin(ScrollTrigger);
 
-// Stile personalizzato per l'animazione shimmer (RIPRISTINATO)
-// In un progetto reale, lo aggiungeresti al CSS globale.
+// Stile CSS globale (per l'animazione shimmer del bottone)
 const shimmerStyle = `
   @keyframes shimmer {
     0% { transform: translateX(-100%); }
@@ -31,8 +30,8 @@ const textVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.6 } },
 };
 
-// --- COMPONENTI (Invariati: Logo, ElectricButton, Navbar, Hero, ServiceTag) ---
-// ... (omessi per brevità, tutti gli altri componenti precedenti rimangono invariati)
+// --- COMPONENTI BASE ---
+
 const Logo = () => (
   <a href="#" className="flex items-center gap-2 group cursor-pointer select-none z-50 relative">
     <div className="relative w-10 h-10 flex items-center justify-center bg-yellow-500/10 rounded-lg border border-yellow-500/20 group-hover:border-yellow-400/50 transition-colors">
@@ -45,7 +44,6 @@ const Logo = () => (
   </a>
 );
 
-// Bottone Elettrico (CTA principale)
 const ElectricButton = ({ text, onClick }) => {
   return (
     <motion.button
@@ -54,9 +52,7 @@ const ElectricButton = ({ text, onClick }) => {
       onClick={onClick}
       className="relative group px-8 py-3 bg-yellow-400 text-slate-900 font-bold overflow-hidden rounded-lg shadow-xl shadow-yellow-400/30 transition-all"
     >
-      {/* Effetto Shimmer/Zap su Hover - richiede una definizione keyframe CSS esterna */}
       <div className="absolute top-0 left-[-100%] w-1/2 h-full bg-gradient-to-r from-transparent via-white/70 to-transparent skew-x-12 group-hover:animate-shimmer opacity-0 group-hover:opacity-100" />
-
       <span className="relative z-10 flex items-center gap-2 uppercase tracking-wider text-sm">
         {text}
         <Zap className="w-4 h-4 text-slate-900" />
@@ -201,110 +197,113 @@ const ServiceTag = ({ text, icon: Icon }) => (
     </div>
 );
 
-// --- NUOVO COMPONENTE FASCIO ELETTRICO (GSAP/SVG) ---
+// --- COMPONENTE FASCIO ELETTRICO (VERSIONE ULTRA-ROBUSTA) ---
 
 const ElectricPath = ({ refs }) => {
   const svgRef = useRef(null);
   const pathRef = useRef(null);
-  const pathLengthRef = useRef(0);
+  const sectionRef = useRef(null);
 
-  // Calcola e aggiorna il percorso SVG basato sulle posizioni dei Ref
   const updatePath = () => {
     const svg = svgRef.current;
-    if (!svg || refs.length < 2) return;
+    const section = sectionRef.current;
+    if (!svg || !section || refs.length < 2) return;
 
-    // Ricalcola la dimensione del contenitore SVG (Section Servizi)
-    const section = svg.closest('#servizi');
-    if (!section) return;
-    
+    // Pulizia di ScrollTrigger prima di ricrearlo
+    ScrollTrigger.getAll().forEach(t => t.kill());
+
     const sectionRect = section.getBoundingClientRect();
+    // Utilizza scrollHeight per assicurarsi che l'SVG copra tutta la sezione, inclusi i margini
     const svgWidth = sectionRect.width;
-    const svgHeight = sectionRect.height;
-    
-    // Assicura che l'SVG copra l'intera sezione servizi
+    const svgHeight = section.scrollHeight; 
+
     svg.setAttribute('width', svgWidth);
     svg.setAttribute('height', svgHeight);
-    svg.style.top = `${window.scrollY + sectionRect.top}px`;
-    svg.style.left = `${sectionRect.left}px`;
     svg.style.width = `${svgWidth}px`;
     svg.style.height = `${svgHeight}px`;
 
-
-    let pathData = "M"; // Inizia il percorso SVG
-    let points = [];
-
+    let pathData = "M"; 
+    
+    // Calcolo dei punti rispetto all'origine (0,0) della sezione RELATIVA
     refs.forEach(ref => {
       if (ref.current) {
-        // Ottiene le coordinate relative all'area di visualizzazione (viewport)
         const rect = ref.current.getBoundingClientRect();
         
-        // Calcola il punto centrale (x, y) del Placeholder (rispetto all'SVG genitore)
         const x = rect.left + rect.width / 2 - sectionRect.left;
-        const y = rect.top + rect.height / 2 - sectionRect.top;
-        points.push({ x, y });
+        // La posizione Y è relativa al top della sezione
+        const y = (rect.top + rect.height / 2) - sectionRect.top; 
         
-        // Aggiunge il punto al percorso SVG
         pathData += `${x},${y} L`;
       }
     });
 
-    if (points.length > 0) {
-      // Rimuove l'ultima ' L' superflua
+    if (pathData.length > 1) {
       pathData = pathData.slice(0, -2);
-      
       pathRef.current.setAttribute('d', pathData);
       
-      // Calcola la lunghezza del percorso per l'animazione GSAP
-      pathLengthRef.current = pathRef.current.getTotalLength();
-      pathRef.current.style.strokeDasharray = pathLengthRef.current;
-      pathRef.current.style.strokeDashoffset = pathLengthRef.current;
+      const pathLength = pathRef.current.getTotalLength();
+      pathRef.current.style.strokeDasharray = pathLength;
+      pathRef.current.style.strokeDashoffset = pathLength;
       
-      // Configura l'animazione ScrollTrigger/GSAP
-      ScrollTrigger.create({
-        trigger: section,
-        start: "top center", // Inizia l'animazione quando la sezione Servizi è al centro del viewport
-        end: "bottom center", // Finisce l'animazione alla fine della sezione Servizi
-        scrub: 1, // Collega lo scroll alla timeline
-        onUpdate: (self) => {
-          // Usa la progressione dello scroll per animare l'offset
-          gsap.to(pathRef.current, {
-            strokeDashoffset: pathLengthRef.current * (1 - self.progress),
-            ease: "none",
-            duration: 0.1, // Veloce per non interferire con scrub
-          });
-        },
+      // Animazione GSAP con ScrollTrigger
+      gsap.fromTo(pathRef.current, {
+        strokeDashoffset: pathLength
+      }, {
+        strokeDashoffset: 0,
+        ease: "none",
+        scrollTrigger: {
+          trigger: section,
+          start: "top center", 
+          end: "bottom center", 
+          scrub: 1, 
+        }
       });
       
-      // Assicurati che ScrollTrigger venga aggiornato al resize
       ScrollTrigger.refresh();
     }
   };
 
   useLayoutEffect(() => {
-    updatePath(); // Primo calcolo al mount
-    window.addEventListener('resize', updatePath);
+    // 1. Assegna la ref alla sezione
+    sectionRef.current = document.getElementById('servizi');
+    
+    // 2. Calcolo immediato (al mount)
+    updatePath(); 
+    
+    // 3. Ricalcolo al resize (necessario per la responsività)
+    const handleResize = () => updatePath();
+    window.addEventListener('resize', handleResize);
+    
+    // 4. Ricalcolo con un ritardo: essenziale per attendere il rendering finale
+    const timeout = setTimeout(() => {
+        updatePath();
+    }, 500); 
 
+    // 5. Pulizia
     return () => {
-      window.removeEventListener('resize', updatePath);
-      // Rimuovi eventuali istanze ScrollTrigger create
-      ScrollTrigger.getAll().forEach(t => t.kill());
+      window.removeEventListener('resize', handleResize);
+      clearTimeout(timeout);
+      ScrollTrigger.getAll().forEach(t => t.kill()); 
     };
-  }, [refs.length]); // Ricalcola se cambia il numero di Refs
+  }, [refs.length]); 
+
+  if (!sectionRef.current) return null;
 
   return (
     <svg 
       ref={svgRef}
       id="electric-path-svg"
-      className="fixed z-10 pointer-events-none" // Rende l'SVG fisso e non interattivo
+      // Usa absolute per essere relativo alla sezione Servizi (che è relative)
+      className="absolute top-0 left-0 z-10 pointer-events-none" 
       style={{ overflow: 'visible' }}
     >
       <path 
         ref={pathRef}
         fill="none" 
-        stroke="url(#electric-gradient)" // Usa il gradiente per l'effetto di luce
+        stroke="url(#electric-gradient)" 
         strokeWidth="4" 
         strokeLinecap="round" 
-        style={{ filter: 'url(#electric-glow)' }} // Applica l'effetto bagliore
+        style={{ filter: 'url(#electric-glow)' }}
       />
       
       {/* Definizioni SVG per Gradiente e Filtro */}
@@ -334,7 +333,6 @@ const VisualPlaceholder = React.forwardRef(({ icon: Icon, title }, ref) => (
     >
         <div className="absolute inset-0 bg-white/5 opacity-5 rounded-xl animate-pulse-slow" />
         <Icon className="w-24 h-24 text-yellow-400/80 drop-shadow-[0_0_10px_rgba(250,204,21,0.5)]" />
-        {/* TESTO RIMOSSO */}
     </div>
 ));
 
@@ -354,7 +352,6 @@ const ServiceZigZagVisualItem = ({ icon: Icon, title, desc, reverse, delay, visu
                  {title}
              </div>
              <h3 className="text-3xl font-bold text-white leading-snug">{title}</h3>
-             {/* Uso di dangerouslySetInnerHTML per interpretare il grassetto markdown (**) */}
              <p 
                 className="text-slate-400 text-lg" 
                 dangerouslySetInnerHTML={{ __html: desc.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }}
@@ -371,9 +368,9 @@ const ServiceZigZagVisualItem = ({ icon: Icon, title, desc, reverse, delay, visu
     </motion.div>
 );
 
-// Sezione Servizi (Layout a ZigZag con testi rivisti e implementazione del Path)
+// Sezione Servizi (Layout a ZigZag con implementazione del Path)
 const ServicesGrid = () => {
-    const serviceRefs = [useRef(null), useRef(null), useRef(null), useRef(null)]; // Refs per ogni card
+    const serviceRefs = [useRef(null), useRef(null), useRef(null), useRef(null)]; 
 
     const services = [
         { 
@@ -404,7 +401,7 @@ const ServicesGrid = () => {
             {/* ⚡️ ELEMENTO PER L'ANIMAZIONE GSAP ⚡️ */}
             <ElectricPath refs={serviceRefs} />
 
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-20"> {/* Aggiunto z-20 per stare sopra l'SVG */}
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-20"> 
                 {/* Titolo Sezione */}
                 <div className="text-center max-w-4xl mx-auto mb-16">
                     <p className="text-yellow-400 uppercase font-bold text-sm mb-2">I Nostri Servizi Specializzati</p>
@@ -417,7 +414,7 @@ const ServicesGrid = () => {
                         <ServiceZigZagVisualItem 
                             key={index} 
                             {...service} 
-                            visualRef={serviceRefs[index]} // Passa il ref specifico
+                            visualRef={serviceRefs[index]} 
                             reverse={index % 2 !== 0}
                             delay={index * 0.1}
                         />
@@ -428,7 +425,8 @@ const ServicesGrid = () => {
     );
 };
 
-// ... (Resto dei componenti Benefits, Contact, Footer)
+// --- RESTO DEI COMPONENTI (Vantaggi, Contatti, Footer) ---
+
 const BenefitItem = ({ icon: Icon, title, desc, delay }) => (
   <motion.div
     initial={{ opacity: 0, x: -50 }}
