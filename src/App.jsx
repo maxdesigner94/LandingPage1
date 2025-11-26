@@ -1,10 +1,17 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useLayoutEffect } from 'react';
 import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
 import { 
   Zap, Home, Factory, ShieldCheck, Cpu, Phone, ArrowRight, 
   BatteryCharging, Menu, X, Lightbulb, CheckCircle2, ChevronRight,
   ClipboardCheck, HardHat, Clock, Layers, TrendingUp, Grid, Camera
 } from 'lucide-react';
+
+// ⚡️ IMPORTAZIONE GSAP E PLUGIN ⚡️
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+// Registra i plugin di GSAP
+gsap.registerPlugin(ScrollTrigger);
 
 // Stile personalizzato per l'animazione shimmer (RIPRISTINATO)
 // In un progetto reale, lo aggiungeresti al CSS globale.
@@ -25,8 +32,7 @@ const textVariants = {
 };
 
 // --- COMPONENTI (Invariati: Logo, ElectricButton, Navbar, Hero, ServiceTag) ---
-
-// Logo del brand
+// ... (omessi per brevità, tutti gli altri componenti precedenti rimangono invariati)
 const Logo = () => (
   <a href="#" className="flex items-center gap-2 group cursor-pointer select-none z-50 relative">
     <div className="relative w-10 h-10 flex items-center justify-center bg-yellow-500/10 rounded-lg border border-yellow-500/20 group-hover:border-yellow-400/50 transition-colors">
@@ -59,13 +65,11 @@ const ElectricButton = ({ text, onClick }) => {
   );
 };
 
-// Barra di Navigazione Fissa e Responsiva
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
-    // Gestione dello scrolling
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
@@ -82,7 +86,6 @@ const Navbar = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
         <Logo />
         
-        {/* Navigazione Desktop */}
         <div className="hidden md:flex items-center gap-8">
           {navLinks.map((link) => (
             <a key={link.name} href={link.href} className="text-sm font-medium text-slate-300 hover:text-yellow-400 transition-colors relative group">
@@ -93,13 +96,11 @@ const Navbar = () => {
           <ElectricButton text="Preventivo Gratuito" />
         </div>
 
-        {/* Toggle Mobile */}
         <button className="md:hidden text-white p-2 focus:outline-none" onClick={() => setIsOpen(!isOpen)} aria-label="Toggle Menu">
           {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
       </div>
 
-      {/* Menu Mobile */}
       <motion.div 
         initial={{ opacity: 0, height: 0 }}
         animate={isOpen ? { opacity: 1, height: "auto" } : { opacity: 0, height: 0 }}
@@ -119,12 +120,10 @@ const Navbar = () => {
   );
 };
 
-// Sezione Eroe (Hero)
 const Hero = () => {
   return (
     <section className="relative min-h-screen flex items-center pt-20 overflow-hidden bg-slate-950 z-10">
       <div className="absolute inset-0 z-0 overflow-hidden">
-        {/* Animazione di sfondo energetica */}
         <div className="absolute top-[-20%] right-[-10%] w-[50vw] min-w-[300px] h-[50vw] min-h-[300px] bg-blue-600/10 rounded-full blur-[100px] animate-pulse" />
         <div className="absolute bottom-[-10%] left-[-10%] w-[60vw] min-w-[300px] h-[60vw] min-h-[300px] bg-yellow-400/5 rounded-full blur-[80px] animate-none" />
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10" />
@@ -144,7 +143,6 @@ const Hero = () => {
             }
           }}
         >
-          {/* Tagline di Servizio */}
           <motion.div variants={textVariants} className="flex flex-wrap gap-3 mb-6">
             <ServiceTag text="PRONTO INTERVENTO H24" icon={Clock} />
             <ServiceTag text="CERTIFICAZIONE GARANTITA" icon={CheckCircle2} />
@@ -176,7 +174,6 @@ const Hero = () => {
           </motion.div>
         </motion.div>
         
-        {/* Icona 3D Impianto (Elemento visivo) */}
         <div className="lg:col-span-5 relative hidden lg:block h-full min-h-[400px]">
            <div className="absolute inset-0 flex items-center justify-center">
              <motion.div 
@@ -187,7 +184,6 @@ const Hero = () => {
              >
               <BatteryCharging className="w-40 h-40 text-yellow-400 opacity-20 relative z-10" />
               <Zap className="w-20 h-20 text-yellow-400 absolute drop-shadow-[0_0_20px_rgba(250,204,21,0.8)] z-20" />
-              {/* Dettagli in background */}
               <div className="absolute -top-4 -right-4 w-12 h-12 bg-blue-600/30 rounded-full blur-xl" />
               <div className="absolute bottom-4 left-4 w-10 h-10 bg-yellow-400/30 rounded-full blur-xl" />
              </motion.div>
@@ -198,7 +194,6 @@ const Hero = () => {
   );
 };
 
-// Componente per le Tagline di Servizio
 const ServiceTag = ({ text, icon: Icon }) => (
     <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/50 border border-yellow-500/30 text-slate-200 text-xs font-bold whitespace-nowrap uppercase tracking-wider`}>
         <Icon className="w-3 h-3 text-yellow-400" />
@@ -206,19 +201,145 @@ const ServiceTag = ({ text, icon: Icon }) => (
     </div>
 );
 
-// --- NUOVO COMPONENTE PER IL LAYOUT ZIGZAG CON VISUALIZZATORE ---
+// --- NUOVO COMPONENTE FASCIO ELETTRICO (GSAP/SVG) ---
 
-// Segnaposto per SVG/Lottie (Testo rimosso)
-const VisualPlaceholder = ({ icon: Icon, title }) => (
-    <div className="relative flex items-center justify-center h-full min-h-[250px] bg-slate-900 rounded-xl border border-yellow-400/20 shadow-2xl p-8">
+const ElectricPath = ({ refs }) => {
+  const svgRef = useRef(null);
+  const pathRef = useRef(null);
+  const pathLengthRef = useRef(0);
+
+  // Calcola e aggiorna il percorso SVG basato sulle posizioni dei Ref
+  const updatePath = () => {
+    const svg = svgRef.current;
+    if (!svg || refs.length < 2) return;
+
+    // Ricalcola la dimensione del contenitore SVG (Section Servizi)
+    const section = svg.closest('#servizi');
+    if (!section) return;
+    
+    const sectionRect = section.getBoundingClientRect();
+    const svgWidth = sectionRect.width;
+    const svgHeight = sectionRect.height;
+    
+    // Assicura che l'SVG copra l'intera sezione servizi
+    svg.setAttribute('width', svgWidth);
+    svg.setAttribute('height', svgHeight);
+    svg.style.top = `${window.scrollY + sectionRect.top}px`;
+    svg.style.left = `${sectionRect.left}px`;
+    svg.style.width = `${svgWidth}px`;
+    svg.style.height = `${svgHeight}px`;
+
+
+    let pathData = "M"; // Inizia il percorso SVG
+    let points = [];
+
+    refs.forEach(ref => {
+      if (ref.current) {
+        // Ottiene le coordinate relative all'area di visualizzazione (viewport)
+        const rect = ref.current.getBoundingClientRect();
+        
+        // Calcola il punto centrale (x, y) del Placeholder (rispetto all'SVG genitore)
+        const x = rect.left + rect.width / 2 - sectionRect.left;
+        const y = rect.top + rect.height / 2 - sectionRect.top;
+        points.push({ x, y });
+        
+        // Aggiunge il punto al percorso SVG
+        pathData += `${x},${y} L`;
+      }
+    });
+
+    if (points.length > 0) {
+      // Rimuove l'ultima ' L' superflua
+      pathData = pathData.slice(0, -2);
+      
+      pathRef.current.setAttribute('d', pathData);
+      
+      // Calcola la lunghezza del percorso per l'animazione GSAP
+      pathLengthRef.current = pathRef.current.getTotalLength();
+      pathRef.current.style.strokeDasharray = pathLengthRef.current;
+      pathRef.current.style.strokeDashoffset = pathLengthRef.current;
+      
+      // Configura l'animazione ScrollTrigger/GSAP
+      ScrollTrigger.create({
+        trigger: section,
+        start: "top center", // Inizia l'animazione quando la sezione Servizi è al centro del viewport
+        end: "bottom center", // Finisce l'animazione alla fine della sezione Servizi
+        scrub: 1, // Collega lo scroll alla timeline
+        onUpdate: (self) => {
+          // Usa la progressione dello scroll per animare l'offset
+          gsap.to(pathRef.current, {
+            strokeDashoffset: pathLengthRef.current * (1 - self.progress),
+            ease: "none",
+            duration: 0.1, // Veloce per non interferire con scrub
+          });
+        },
+      });
+      
+      // Assicurati che ScrollTrigger venga aggiornato al resize
+      ScrollTrigger.refresh();
+    }
+  };
+
+  useLayoutEffect(() => {
+    updatePath(); // Primo calcolo al mount
+    window.addEventListener('resize', updatePath);
+
+    return () => {
+      window.removeEventListener('resize', updatePath);
+      // Rimuovi eventuali istanze ScrollTrigger create
+      ScrollTrigger.getAll().forEach(t => t.kill());
+    };
+  }, [refs.length]); // Ricalcola se cambia il numero di Refs
+
+  return (
+    <svg 
+      ref={svgRef}
+      id="electric-path-svg"
+      className="fixed z-10 pointer-events-none" // Rende l'SVG fisso e non interattivo
+      style={{ overflow: 'visible' }}
+    >
+      <path 
+        ref={pathRef}
+        fill="none" 
+        stroke="url(#electric-gradient)" // Usa il gradiente per l'effetto di luce
+        strokeWidth="4" 
+        strokeLinecap="round" 
+        style={{ filter: 'url(#electric-glow)' }} // Applica l'effetto bagliore
+      />
+      
+      {/* Definizioni SVG per Gradiente e Filtro */}
+      <defs>
+        <linearGradient id="electric-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" style={{stopColor:'rgb(255,255,0)', stopOpacity:1}} />
+          <stop offset="100%" style={{stopColor:'rgb(255,165,0)', stopOpacity:1}} />
+        </linearGradient>
+
+        <filter id="electric-glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+    </svg>
+  );
+}
+
+// Segnaposto per SVG/Lottie (VisualPlaceholder Modificato per accettare il ref)
+const VisualPlaceholder = React.forwardRef(({ icon: Icon, title }, ref) => (
+    <div 
+        ref={ref} // Collega il ref qui
+        className="relative flex items-center justify-center h-full min-h-[250px] bg-slate-900 rounded-xl border border-yellow-400/20 shadow-2xl p-8"
+    >
         <div className="absolute inset-0 bg-white/5 opacity-5 rounded-xl animate-pulse-slow" />
         <Icon className="w-24 h-24 text-yellow-400/80 drop-shadow-[0_0_10px_rgba(250,204,21,0.5)]" />
-        {/* TESTO RIMOSSO QUI come richiesto */}
+        {/* TESTO RIMOSSO */}
     </div>
-);
+));
 
 // Componente per il singolo elemento nel layout ZigZag
-const ServiceZigZagVisualItem = ({ icon: Icon, title, desc, reverse, delay }) => (
+const ServiceZigZagVisualItem = ({ icon: Icon, title, desc, reverse, delay, visualRef }) => (
     <motion.div
       initial={{ opacity: 0, y: 50 }}
       whileInView={{ opacity: 1, y: 0 }}
@@ -245,43 +366,45 @@ const ServiceZigZagVisualItem = ({ icon: Icon, title, desc, reverse, delay }) =>
 
         {/* Blocco Visuale (SVG/Lottie Placeholder) */}
         <div className={`p-4 ${reverse ? 'md:order-1' : 'md:order-2'}`}>
-            <VisualPlaceholder icon={Icon} title={title} />
+            <VisualPlaceholder ref={visualRef} icon={Icon} title={title} />
         </div>
     </motion.div>
 );
 
-// Sezione Servizi (Layout a ZigZag con testi rivisti)
+// Sezione Servizi (Layout a ZigZag con testi rivisti e implementazione del Path)
 const ServicesGrid = () => {
+    const serviceRefs = [useRef(null), useRef(null), useRef(null), useRef(null)]; // Refs per ogni card
+
     const services = [
         { 
             icon: Home, 
             title: "Impianti Elettrici Civili & Domotica", 
-            // Formattazione rivista (tolti i #)
             desc: "**Progettazione e installazione di impianti elettrici civili a norma CEI** per case e condomini. Integrazione di **sistemi domotici** (smart home) per gestione carichi, illuminazione intelligente e massimo **risparmio energetico domestico**.",
         },
         { 
             icon: Factory, 
             title: "Impianti Elettrici Industriali & Terziario", 
-            // Formattazione rivista (tolti i #)
             desc: "Soluzioni per aziende e industrie: **quadri elettrici di potenza**, **cabine di trasformazione MT/BT** e **automazione industriale**. Garantiamo massima efficienza, sicurezza e **continuità operativa** per il tuo business.",
         },
         { 
             icon: Clock, 
             title: "Pronto Intervento, Manutenzione e Adeguamento", 
-            // Formattazione rivista (tolti i #)
             desc: "Servizio di **pronto intervento elettrico H24** e **manutenzione programmata** per prevenire guasti. Effettuiamo **adeguamenti normativi** (DiCo) e rilascio di **certificazioni** obbligatorie per ogni tipo di impianto.",
         },
         { 
             icon: ShieldCheck, 
             title: "Sicurezza Certificata & TVCC", 
-            // Formattazione rivista (tolti i #)
             desc: "Installazione di **sistemi di sicurezza certificati**: **antifurto wireless**, impianti **TVCC (videosorveglianza)** IP ad alta risoluzione e controllo accessi. Protezione totale e gestione remota del tuo immobile.",
         },
     ];
 
     return (
-        <section id="servizi" className="py-24 bg-slate-950">
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <section id="servizi" className="py-24 bg-slate-950 relative"> 
+            
+            {/* ⚡️ ELEMENTO PER L'ANIMAZIONE GSAP ⚡️ */}
+            <ElectricPath refs={serviceRefs} />
+
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-20"> {/* Aggiunto z-20 per stare sopra l'SVG */}
                 {/* Titolo Sezione */}
                 <div className="text-center max-w-4xl mx-auto mb-16">
                     <p className="text-yellow-400 uppercase font-bold text-sm mb-2">I Nostri Servizi Specializzati</p>
@@ -294,8 +417,9 @@ const ServicesGrid = () => {
                         <ServiceZigZagVisualItem 
                             key={index} 
                             {...service} 
-                            reverse={index % 2 !== 0} // Alterna la direzione (true per i dispari)
-                            delay={index * 0.1} // Delay per animazione in sequenza
+                            visualRef={serviceRefs[index]} // Passa il ref specifico
+                            reverse={index % 2 !== 0}
+                            delay={index * 0.1}
                         />
                     ))}
                 </div>
@@ -304,7 +428,7 @@ const ServicesGrid = () => {
     );
 };
 
-// Componente Vantaggio con animazione (Invariato)
+// ... (Resto dei componenti Benefits, Contact, Footer)
 const BenefitItem = ({ icon: Icon, title, desc, delay }) => (
   <motion.div
     initial={{ opacity: 0, x: -50 }}
@@ -323,7 +447,6 @@ const BenefitItem = ({ icon: Icon, title, desc, delay }) => (
   </motion.div>
 );
 
-// Sezione Vantaggi (Perché Sceglierci) (Invariato)
 const Benefits = () => {
   const benefits = [
     { icon: ClipboardCheck, title: "Certificazione Garantita", desc: "Tutti i nostri impianti sono rilasciati con dichiarazione di conformità (DiCo) secondo le normative CEI in vigore." },
@@ -337,17 +460,15 @@ const Benefits = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           
-          {/* Contenuto Testuale */}
           <div className="lg:pr-10">
             <p className="text-yellow-400 uppercase font-bold text-sm mb-2">Il Nostro Valore Aggiunto</p>
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Scegliere Flash Impianti è Scegliere la Qualità.</h2>
-            <p className className="text-slate-300 text-lg mb-8">
+            <p className="text-slate-300 text-lg mb-8">
               Non siamo solo installatori, siamo consulenti energetici. Ti aiutiamo a fare scelte informate che impattano positivamente sull'ambiente e sul tuo bilancio.
             </p>
             <ElectricButton text="Inizia la tua Trasformazione" />
           </div>
 
-          {/* Lista dei Vantaggi */}
           <div className="space-y-6">
             {benefits.map((benefit, index) => (
               <BenefitItem key={index} {...benefit} delay={index * 0.1} />
@@ -359,15 +480,10 @@ const Benefits = () => {
   );
 };
 
-
-// Sezione Contatti con Form (Invariata)
 const Contact = () => {
-  // Funzione fittizia per la sottomissione
   const handleSubmit = (e) => {
     e.preventDefault();
-    // In un ambiente reale, qui ci sarebbe la logica per inviare i dati.
     console.log("Dati inviati per il preventivo.");
-    // Sostituisco alert con una simulazione di messaggio
     document.getElementById('contact-message').textContent = "Richiesta inviata! Sarai ricontattato a breve.";
     document.getElementById('contact-message').classList.remove('hidden');
     setTimeout(() => {
@@ -406,7 +522,6 @@ const Contact = () => {
   );
 };
 
-// Footer (Piè di Pagina) (Invariato)
 const Footer = () => (
   <footer className="bg-slate-950 text-slate-500 py-10 border-t border-white/10">
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
